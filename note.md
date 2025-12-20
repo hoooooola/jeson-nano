@@ -1,3 +1,7 @@
+[info](https://drive.google.com/drive/folders/12ziUuyp-AXPtEMNotsjHQ_TJ5xlohHLQ)
+
+[FPGA](https://drive.google.com/drive/folders/12ziUuyp-AXPtEMNotsjHQ_TJ5xlohHLQ)
+
 ## Jetson Nano
 ### HW
 - 
@@ -32,5 +36,7 @@
 - ubuntu os
 - SDK, cuda, cuDNN, TensorRT, OpenCV, OpenALPR, OpenSTAMINA
 - 20個範例, 不到20行CODE, [jetpack](https://developer.nvidia.com/embedded/jetpack)
+
+# https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#intro
 
 
