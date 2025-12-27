@@ -257,6 +257,16 @@ Use Xorg for log in session
 
 2. 也可以用RealVNC Viewer 連線
 
+### 遠端連線 (Remote Connection) protocol
+
+| 需求場景 | 推薦工具 (Best Choice) | 優點說明 |
+| :--- | :--- | :--- |
+| 連線管理 Linux 伺服器 | SSH | 最標準、安全且通用的遠端管理協議。 |
+| 連線管理 🌟 Windows 首選 | RDP | 專為 Windows 設計，圖形界面傳輸速度最快。 |
+| 連線管理  | VNC | 跨平台（Linux/Mac/Windows），但通常速度比 RDP 慢 |
+| 傳送檔案給伺服器 | SFTP | 基於 SSH 加密，確保檔案傳輸過程安全性。 |
+| 設定新路由器或硬體🌟 硬體工程師必用 | Serial | 透過實體序列埠連接，不需依賴網路環境即可設定。 |
+
 ## 環境設定
 - install vlc多媒體撥放器
 $ sudo apt vlc
@@ -284,6 +294,7 @@ $ jtop
 ## DEV langrage
 - GCC(C++)
 - python
+- shell script
 
 ## 周邊設備
 - driver需要支援linux
@@ -291,20 +302,55 @@ $ jtop
 
 ## 嵌入式硬體控制
 - 環境設定完成後, 開始控制硬體
-- GPIO, wifi, Serial Port/COM, BT, Driver, Toolchain, Menuconfig
+- GPIO, wifi, BT,ethernet, Serial Port/COM, Driver, Toolchain, Menuconfig
 
-### Toolchain aka cross compiler
+### Toolchain aka cross compiler on IDE
 - 在電腦上編譯要在開發板跑的程式
 
 ### Menuconfig
 - 設定 Linux Kernel 的功能（比如要不要支援某個特定的 WiFi 晶片）
-
+- 寫image, jeston nano 4g image toolchain
 ### Driver
 - 寫驅動程式讓作業系統認識硬體
 
 ## jetson nano hello world 
 資料來源:
 https://developer.nvidia.com/embedded/learn/getting-started-jetson
+
+
+
+## AOSP (Android Open Source Project)
+![alt text](image-11.png)
+
+
+
+
+JNI, java call c/c++
+HAL
+Kernel
+
+### app 
+- car, robot, drone, home automation, medical, security, transportation, 
+
+jetson nano   for Android TV
+https://download.lineageos.org/devices/porg/builds
+
+
+
+
+Raspberry Pi for Android Auto
+https://getcrankshaft.com/
+
+
+
+
+jetson nano 其他版本的OS
+https://forum.libreelec.tv/thread/17950-nvidia-jetson-nano-support-any-chances-or-progress/
+
+
+
+kodi docker
+https://hub.docker.com/r/aliubimov/kodi-tegra
 
 
 
