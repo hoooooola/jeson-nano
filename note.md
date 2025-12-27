@@ -141,3 +141,19 @@ JetPack SDK = 作業系統 + 驅動 + 加速庫 (基於 Ubuntu OS)
 # https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#intro
 
 
+## flash SOM IMAGE
+- [ Jetson Nano Developer Kit SD Card Imagetext](https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write)
+
+ 
+- [format sd card for linux in windows](https://www.sdcard.org/downloads/formatter/)
+
+- [format sd card for linux in linux](https://www.sdcard.org/downloads/sd-memory-card-formatter-for-linux/)
+
+如何開始使用
+https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit
+
+安裝以下軟體
+balenaEtcher-Setup-1.18.11
+https://etcher.balena.io/#download-etcher
+
+## boot SOM
