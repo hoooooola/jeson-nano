@@ -239,11 +239,15 @@ EndSection
 $ sudo apt-get install tightvncserver xrdp  -y
 $ sudo reboot
 
-- Install xfce4 (a desktop environment)安裝一個輕量級的桌面環境 (XFCE)，並設定讓 Windows 的「遠端桌面連線 (RDP)」使用這個環境登入。
-$ sudo apt-get install xfce4 -y
-$ echo xfce4-session >~/.xsession
-$ sudo service xrdp restart
-$ sudo reboot
+- Install xfce4 (a desktop environment)
+- 一個輕量級的桌面環境 (XFCE)，並設定讓 Windows 的「遠端桌面連線 (RDP)」使用這個環境登入。
+- 主要目的是 「解決 RDP 連線後的桌面黑屏或效能問題」
+```
+sudo apt-get install xfce4 -y
+echo xfce4-session >~/.xsession
+sudo service xrdp restart
+sudo reboot
+```
 
 - 找IP
 $ ifconfig
@@ -266,6 +270,16 @@ Use Xorg for log in session
 | 連線管理  | VNC | 跨平台（Linux/Mac/Windows），但通常速度比 RDP 慢 |
 | 傳送檔案給伺服器 | SFTP | 基於 SSH 加密，確保檔案傳輸過程安全性。 |
 | 設定新路由器或硬體🌟 硬體工程師必用 | Serial | 透過實體序列埠連接，不需依賴網路環境即可設定。 |
+
+### 遠端工具大比拼 (Tool Comparison)
+
+| 特性 | MobaXterm (您的現狀) | VS Code (Remote SSH) | NoMachine | Termius |
+| :--- | :--- | :--- | :--- | :--- |
+| 主要用途 | 綜合工具箱 (SSH+SFTP+X11) | 程式開發 (Coding) | 遠端桌面 (GUI 操作) | 多裝置管理 / 監控 |
+| X11 轉發 | 完美 (內建) | 需配合外部 X Server | 不適用 (它是整個桌面) | 不支援 |
+| 檔案傳輸 | 方便 (左側拖拉) | 直覺 (直接編輯) | 較不方便 | 需付費版 |
+| Jetson 資源消耗 | 低 | 中 (視外掛而定) | 中高 (視畫面複雜度) | 極低 |
+| 推薦指數 | ⭐⭐⭐⭐⭐ (標準配備) | ⭐⭐⭐⭐⭐ (開發必備) | ⭐⭐⭐⭐ (圖形需求) | ⭐⭐⭐ (管理需求) |
 
 ## 環境設定
 - install vlc多媒體撥放器
