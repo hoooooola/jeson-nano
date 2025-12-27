@@ -149,6 +149,9 @@ JetPack SDK = 作業系統 + 驅動 + 加速庫 (基於 Ubuntu OS)
 
 - [format sd card for linux in linux](https://www.sdcard.org/downloads/sd-memory-card-formatter-for-linux/)
 
+![alt text](image.png)
+
+
 如何開始使用
 https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit
 
@@ -156,4 +159,27 @@ https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit
 balenaEtcher-Setup-1.18.11
 https://etcher.balena.io/#download-etcher
 
+
+![alt text](image-2.png)
+
 ## boot SOM
+- nano image 內建開發環境
+
+## 遠端連線
+### putty com port ssh
+- 可多用戶同時連線
+- IPXXX, port 22
+
+ifconfig
+
+![alt text](image-3.png)
+
+![alt text](image-4.png)
+
+### mobaXterm com port ssh
+
+![alt text](image-5.png)
+
+![alt text](image-6.png)
+
+![alt text](image-7.png)
