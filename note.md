@@ -269,6 +269,18 @@ $ sudo apt install ffmpeg
 $ sudo apt-get install ibus-pinyin ibus-chewing -y
 $ sudo reboot
 
+- server client檔案傳輸 使用SSH File Transfer Protocol, client 使用 FileZilla, mobaXterm
+
+![alt text](image-10.png)
+
+![alt text](image-9.png)
+
+- 監控HW
+$ sudo -H pip3 install -U jetson-stats
+$ sudo reboot
+$ jtop
+
+
 ## DEV langrage
 - GCC(C++)
 - python
@@ -276,5 +288,56 @@ $ sudo reboot
 ## 周邊設備
 - driver需要支援linux
 - keyboard , Wireless Mini USB Bluetooth CSR 4.0 Dual Mode Adapter Dongle
+
+## 嵌入式硬體控制
+- 環境設定完成後, 開始控制硬體
+- GPIO, wifi, Serial Port/COM, BT, Driver, Toolchain, Menuconfig
+
+### Toolchain aka cross compiler
+- 在電腦上編譯要在開發板跑的程式
+
+### Menuconfig
+- 設定 Linux Kernel 的功能（比如要不要支援某個特定的 WiFi 晶片）
+
+### Driver
+- 寫驅動程式讓作業系統認識硬體
+
+## jetson nano hello world 
+資料來源:
+https://developer.nvidia.com/embedded/learn/getting-started-jetson
+
+
+
+
+
+
+R1mini ROS2 SLAM Mapping and Navigation
+https://developer.nvidia.com/embedded/community/jetson-projects/omo_r1mini
+
+
+
+hello world AI jetson nano 
+https://github.com/dusty-nv/jetson-inference#deploying-deep-learning
+
+
+
+AI 演算法
+MNIST 數據庫 https://www.kaggle.com/datasets/hojjatk/mnist-dataset
+
+85%  決策樹
+92%  KNN  
+95%  DNN 類神經 NN MLP    
+
+98%  CNN (Convolutional Neural Networks)
+
+
+YOLO    多物件
+Mask  R-CNN 
+
+
+
+
+一個分類  最少要有1000張
+
 
 
