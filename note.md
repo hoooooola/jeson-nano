@@ -183,3 +183,98 @@ ifconfig
 ![alt text](image-6.png)
 
 ![alt text](image-7.png)
+
+### 設定VNC Jetson Nano Remote Desktop Setup
+
+- Install vino (a virtual network computing server)
+sudo apt update
+sudo apt install vino
+
+gsettings set org.gnome.Vino prompt-enabled false
+gsettings set org.gnome.Vino require-encryption false
+
+- Add network card into vino service 添加 網路卡UUID 
+
+nmcli connection show
+
+![alt text](image-8.png)
+
+- 設定GONE 螢幕分享給使用者UUID
+dconf write /org/gnome/settings-daemon/plugins/sharing/vino-server/enabled-connections "['0f6a9093-cc04-36bc-8431-585b86867ee5']" export DISPLAY=:0
+
+- 設定開機啟動vino server
+$ cd ~/.config
+$ mkdir autostart 
+$ cd autostart
+
+$ sudo nano ~/.config/autostart/vino-server.desktop
+
+- 添加以下的文字:
+[Desktop Entry]
+Type=Application
+Exec=/usr/lib/vino/vino-server
+Name=Vino VNC Sharing
+X-GNOME-Autostart-enabled=true
+NoDisplay=false
+
+- Save file and return to shell    按下ctrl+O 存   ctrl+x 離開
+
+- 編輯另外一個檔案
+$ sudo nano /etc/X11/xorg.conf
+
+添加以下文字:
+Section "Screen"
+    Identifier  "Default Screen"
+    Monitor     "Configured Monitor"
+    Device      "Default Device"
+    SubSection  "Display"
+        Depth 24
+        Virtual 1200 1080
+    EndSubSection
+EndSection
+
+- Save file and return to shell    按下ctrl+O 存   ctrl+x 離開
+
+- Install tightvncserver and xrdp
+$ sudo apt-get install tightvncserver xrdp  -y
+$ sudo reboot
+
+- Install xfce4 (a desktop environment)安裝一個輕量級的桌面環境 (XFCE)，並設定讓 Windows 的「遠端桌面連線 (RDP)」使用這個環境登入。
+$ sudo apt-get install xfce4 -y
+$ echo xfce4-session >~/.xsession
+$ sudo service xrdp restart
+$ sudo reboot
+
+- 找IP
+$ ifconfig
+
+Windows 可以用以下的方法連線
+1. Windows 10 remote desktop connection
+Open ‘Remote Desktop Connection’ app
+IP: 192.168.1.42
+Use Xorg for log in session
+
+
+2. 也可以用RealVNC Viewer 連線
+
+## 環境設定
+- install vlc多媒體撥放器
+$ sudo apt vlc
+$ sudo apt-get  vlc
+
+- install ffmpeg
+$ sudo apt install ffmpeg
+
+- 中文輸入法
+$ sudo apt-get install ibus-pinyin ibus-chewing -y
+$ sudo reboot
+
+## DEV langrage
+- GCC(C++)
+- python
+
+## 周邊設備
+- driver需要支援linux
+- keyboard , Wireless Mini USB Bluetooth CSR 4.0 Dual Mode Adapter Dongle
+
+
