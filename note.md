@@ -149,7 +149,7 @@ JetPack SDK = 作業系統 + 驅動 + 加速庫 (基於 Ubuntu OS)
 
 - [format sd card for linux in linux](https://www.sdcard.org/downloads/sd-memory-card-formatter-for-linux/)
 
-![alt text](image.png)
+![alt text](img/jetson_sd_card_setup.png)
 
 
 如何開始使用
@@ -160,7 +160,7 @@ balenaEtcher-Setup-1.18.11
 https://etcher.balena.io/#download-etcher
 
 
-![alt text](image-2.png)
+![alt text](img/balena_etcher_ui.png)
 
 ## boot SOM
 - nano image 內建開發環境
@@ -172,17 +172,17 @@ https://etcher.balena.io/#download-etcher
 
 ifconfig
 
-![alt text](image-3.png)
+![alt text](img/putty_config.png)
 
-![alt text](image-4.png)
+![alt text](img/putty_terminal_ifconfig.png)
 
 ### mobaXterm com port ssh
 
-![alt text](image-5.png)
+![alt text](img/mobaxterm_ssh_setup.png)
 
-![alt text](image-6.png)
+![alt text](img/mobaxterm_terminal.png)
 
-![alt text](image-7.png)
+![alt text](img/mobaxterm_session.png)
 
 ### 設定VNC Jetson Nano Remote Desktop Setup
 
@@ -197,7 +197,7 @@ gsettings set org.gnome.Vino require-encryption false
 
 nmcli connection show
 
-![alt text](image-8.png)
+![alt text](img/nmcli_uuid_check.png)
 
 - 設定GONE 螢幕分享給使用者UUID
 dconf write /org/gnome/settings-daemon/plugins/sharing/vino-server/enabled-connections "['0f6a9093-cc04-36bc-8431-585b86867ee5']" export DISPLAY=:0
@@ -295,9 +295,9 @@ $ sudo reboot
 
 - server client檔案傳輸 使用SSH File Transfer Protocol, client 使用 FileZilla, mobaXterm
 
-![alt text](image-10.png)
+![alt text](img/sftp_setup_example.png)
 
-![alt text](image-9.png)
+![alt text](img/filezilla_interface_example.png)
 
 - 監控HW
 $ sudo -H pip3 install -U jetson-stats
@@ -334,7 +334,7 @@ https://developer.nvidia.com/embedded/learn/getting-started-jetson
 
 
 ## AOSP (Android Open Source Project)
-![alt text](image-11.png)
+![alt text](img/aosp_architecture_diagram.png)
 
 
 
@@ -398,6 +398,258 @@ Mask  R-CNN
 
 
 一個分類  最少要有1000張
+
+
+## GPIO
+
+![alt text](img/jetson_gpio_pinout.png)
+
+
+
+
+![alt text](img/terminal_python_check.png)
+
+### 查 Python 版本 和 pip
+python3 --version
+python --version
+pip3 list
+
+#### GPIO
+電子材料
+https://hackmd.io/@PowenKo/B1e1MVaXel
+
+
+
+37合一
+https://hackmd.io/Qyz_Qw6BTL6LnQS0DpU-kA
+
+-----
+
+02_DigitalOut_easy.py
+
+pin14 > G > 短
+
+GPIO18/pin12 > +  >長
+
+![alt text](img/gpio_led_wiring_diagram.png)
+
+![alt text](img/gpio_led_wiring_photo_1.png)
+
+![alt text](img/gpio_led_wiring_photo_2.png)
+
+![alt text](img/gpio_led_wiring_photo_3.png)
+
+---
+
+
+03_DigitalInput_easy.py
+
+03_DigitalInput_controlLed.py
+
+---
+
+#### PWM 可輸出類比訊號
+
+**PWM 訊號具有三個關鍵參數：**
+
+1. **頻率（Frequency）**
+    - 每秒重複幾次脈波（單位：Hz）
+    - 通常固定不變
+    - 例：5HZ = 每秒重複5次脈波
+
+2. **週期（Period）**
+    - 一次完整 High + Low 的時間
+    - 週期 = 1 / 頻率
+    - 例：週期 = 1 / 5 = 0.2 秒
+
+3. **佔空比（Duty Cycle）**
+    - High 電位在一個週期中所佔的比例（%）
+    - 例如：
+        - 0%：永遠 Low
+        - 50%：一半 High、一半 Low
+        - 100%：永遠 High
+
+---
+
+## Docker
+
+- https://hackmd.io/@PowenKo/By_fzdj4xg
+
+- Docker 是一種開源容器化平台，它使開發人員能夠將應用程式及其所有依賴項 (設定、檔案) 打包到一個標準化的單位中，稱為**容器（Container）**。
+- 容器化技術確保應用程式能夠在任何環境中一致地執行，無論是開發、測試還是部署環境。
+
+- 與虛擬機 (VM) 的主要差異為：Docker 容器共享 Host OS 核心，相當於把 OS 層抽離，因此更輕量。
+
+### Docker 的基本組成
+
+#### 1. Docker Engine
+Docker 的核心技術，用於建立和管理容器。包含三部分：
+- **Docker Daemon（服務端）**：負責處理容器的建立、執行、停止等操作。
+- **Docker CLI（命令行工具）**：用於與 Docker Daemon 進行互動。
+- **REST API**：提供給其他工具或應用程式使用的接口。
+
+#### 2. Docker Image（映像檔）
+容器的模板，包含應用程式及其運行所需的所有文件和依賴項。使用分層文件系統（Layered Filesystem），以節省存儲空間和下載時間。
+
+**常用命令：**
+- `docker images`：查看本地映像檔。
+- `docker build`：從 Dockerfile 建立映像檔。
+- `docker pull`：從 Docker Hub 拉取映像檔。
+
+#### 3. Docker Container（容器）
+映像檔的執行實例，每個容器都是相互隔離的。容器是輕量級的，啟動速度快。
+
+**常用命令：**
+- `docker run`：啟動容器。
+- `docker ps`：查看正在運行的容器。
+- `docker stop`：停止容器。
+
+#### 4. Dockerfile
+用於描述如何建立映像檔的文本文件。包含指令（例如 `FROM`、`RUN`、`COPY` 等），用於定義映像的環境。
+
+#### 5. Docker Compose
+定義和管理多容器應用程式的工具。使用 `docker-compose.yml` 文件定義應用程式的服務、網絡和卷。
+
+#### 6. [Docker Hub](https://hub.docker.com/)
+Docker 的雲端公共倉庫，用於存儲和分享映像檔。
+
+### Docker run on Nano
+
+安裝 Docker Jetson Nano 官方支援 Docker，可以直接通過 APT 安裝：
+
+```bash
+sudo apt install -y docker.io
+```
+
+檢查 Docker 是否安裝成功 執行以下命令檢查 Docker 版本：
+```bash
+docker --version
+```
+
+輸出應該類似：
+    nano@linux:~$ docker --version
+
+    Docker version 20.10.21, build 20.10.21-0ubuntu1~18.04.3
+
+
+將使用者加入 Docker 群組 若希望使用者執行 Docker 不需要 sudo，執行以下命令：
+
+```bash
+sudo usermod -aG docker $USER #nano
+```
+執行完成後，重新登入帳戶以生效。
+
+啟動 Docker 服務
+
+```bash
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+### 在 Jetson Nano 上使用 Docker
+
+#### 驗證 Docker 安裝
+執行以下命令，下載並運行 Docker 測試容器：
+```bash
+docker run hello-world
+```
+如果 Docker 運作正常，會顯示 "Hello from Docker!" 的訊息。
+
+#### 執行支援 CUDA 的 Docker 映像檔
+NVIDIA 提供了支援 CUDA 的 Docker 映像檔以加速 AI 開發。
+
+**拉取映像檔：**
+```bash
+docker pull nvcr.io/nvidia/l4t-base:r32.6.1
+```
+
+**運行容器：**
+```bash
+docker run --runtime nvidia --rm nvcr.io/nvidia/l4t-base:r32.6.1
+```
+
+**確保 NVIDIA 驅動和 CUDA 可用：**
+```bash
+docker run --runtime nvidia --rm nvcr.io/nvidia/l4t-base:r32.6.1 nvidia-smi
+```
+
+
+#### 安裝 Docker Compose
+Jetson Nano 不預設安裝 Docker Compose，需要手動安裝：
+
+```bash
+sudo apt install -y python3-pip
+pip3 install docker-compose
+```
+
+#### 確認 Docker Compose 版本
+執行以下命令檢查版本：
+```bash
+docker-compose --version
+```
+
+#### 使用 Docker Compose(撰寫yml) 啟動多容器應用
+建立 `docker-compose.yml` 檔案，例如：
+
+```yaml
+version: "3.8"
+services:
+  app:
+    image: nvcr.io/nvidia/l4t-pytorch:r32.6.1-pth1.9-py3
+    runtime: nvidia
+    volumes:
+      - ./workspace:/workspace
+    ports:
+      - "8888:8888"
+    command: jupyter notebook --ip=0.0.0.0 --allow-root
+```
+
+啟動服務：
+```bash
+docker-compose up
+```
+
+---
+### Docker APP
+
+- YOLO
+- MCP Server
+
+使用DOCKER缺點: Docker 服務會自動啟動, 可以kill掉
+
+```bash
+sudo docker kill <container_id>
+```
+
+---
+#### [Qwen AI模型](https://hub.docker.com/r/ai/qwen3)
+
+```bash
+sudo docker run -d --runtime nvidia --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
+```
+
+```bash
+sudo docker exec -it ollama ollama pull qwen:0.5b
+```
+
+---
+### Docker 常用指令（簡介）
+
+| 功能 | 指令範例 |
+| :--- | :--- |
+| 查看版本 | `docker --version` |
+| 查看容器 | `docker ps -a` |
+| 停止容器 | `docker stop <容器名稱或 ID>` |
+| 移除容器 | `docker rm <容器名稱或 ID>` |
+| 查看映像檔 | `docker images` |
+| 刪除映像檔 | `docker rmi <映像名稱或 ID>` |
+| 執行容器 | `docker run -d -p 8080:80 nginx` |
+| 進入容器 | `docker exec -it <容器名稱> /bin/bash` |
+
+
+
+
+
+
 
 
 
