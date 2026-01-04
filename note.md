@@ -181,103 +181,14 @@ https://etcher.balena.io/#download-etcher
 ###  client is ubuntu
 - NoMachine 最佳
 - xrdp 最方便
-- ssh 
+- IDE ssh 
 
-
-### putty com port ssh
-- 可多用戶同時連線
-- IPXXX, port 22
-
-ifconfig
-
-![alt text](img/putty_config.png)
-
-![alt text](img/putty_terminal_ifconfig.png)
-
-### mobaXterm com port ssh
-
-![alt text](img/mobaxterm_ssh_setup.png)
-
-![alt text](img/mobaxterm_terminal.png)
-
-![alt text](img/mobaxterm_session.png)
-
-### 設定VNC Jetson Nano Remote Desktop Setup
-
-- Install vino (a virtual network computing server)
-sudo apt update
-sudo apt install vino
-
-gsettings set org.gnome.Vino prompt-enabled false
-gsettings set org.gnome.Vino require-encryption false
-
-- Add network card into vino service 添加 網路卡UUID 
-
-nmcli connection show
-
-![alt text](img/nmcli_uuid_check.png)
-
-- 設定GONE 螢幕分享給使用者UUID
-dconf write /org/gnome/settings-daemon/plugins/sharing/vino-server/enabled-connections "['0f6a9093-cc04-36bc-8431-585b86867ee5']" export DISPLAY=:0
-
-- 設定開機啟動vino server
-$ cd ~/.config
-$ mkdir autostart 
-$ cd autostart
-
-$ sudo nano ~/.config/autostart/vino-server.desktop
-
-- 添加以下的文字:
-[Desktop Entry]
-Type=Application
-Exec=/usr/lib/vino/vino-server
-Name=Vino VNC Sharing
-X-GNOME-Autostart-enabled=true
-NoDisplay=false
-
-- Save file and return to shell    按下ctrl+O 存   ctrl+x 離開
-
-- 編輯另外一個檔案
-$ sudo nano /etc/X11/xorg.conf
-
-添加以下文字:
-Section "Screen"
-    Identifier  "Default Screen"
-    Monitor     "Configured Monitor"
-    Device      "Default Device"
-    SubSection  "Display"
-        Depth 24
-        Virtual 1200 1080
-    EndSubSection
-EndSection
-
-- Save file and return to shell    按下ctrl+O 存   ctrl+x 離開
-
-- Install tightvncserver and xrdp
-$ sudo apt-get install tightvncserver xrdp  -y
-$ sudo reboot
-
-- Install xfce4 (a desktop environment)
-- 一個輕量級的桌面環境 (XFCE)，並設定讓 Windows 的「遠端桌面連線 (RDP)」使用這個環境登入。
-- 主要目的是 「解決 RDP 連線後的桌面黑屏或效能問題」
-```
-sudo apt-get install xfce4 -y
-echo xfce4-session >~/.xsession
-sudo service xrdp restart
-sudo reboot
-```
+### client is windows
 
 - 找IP
-$ ifconfig
-
-Windows 可以用以下的方法連線
-1. Windows 10 remote desktop connection
-Open ‘Remote Desktop Connection’ app
-IP: 192.168.1.42
-Use Xorg for log in session
-
-
-2. 也可以用RealVNC Viewer 連線
+```
+ifconfig #ip addr
+```
 
 ### 遠端連線 (Remote Connection) protocol
 
@@ -301,26 +212,35 @@ Use Xorg for log in session
 
 ## 環境設定
 - install vlc多媒體撥放器
-$ sudo apt vlc
-$ sudo apt-get  vlc
+``` bash
+sudo apt vlc
+sudo apt-get  vlc
+```
 
 - install ffmpeg
-$ sudo apt install ffmpeg
+``` bash
+sudo apt install ffmpeg
+```
 
 - 中文輸入法
-$ sudo apt-get install ibus-pinyin ibus-chewing -y
-$ sudo reboot
+``` bash
+sudo apt-get install ibus-pinyin ibus-chewing -y
+sudo reboot
+```
 
-- server client檔案傳輸 使用SSH File Transfer Protocol, client 使用 FileZilla, mobaXterm
-
-![alt text](img/sftp_setup_example.png)
-
-![alt text](img/filezilla_interface_example.png)
+- 安裝python
+``` bash
+sudo apt-get update
+sudo apt-get install python3-pip
+```
 
 - 監控HW
-$ sudo -H pip3 install -U jetson-stats
-$ sudo reboot
-$ jtop
+
+``` bash
+sudo -H pip3 install -U jetson-stats
+sudo reboot
+jtop
+```
 
 
 ## DEV langrage
@@ -371,17 +291,20 @@ https://download.lineageos.org/devices/porg/builds
 
 
 Raspberry Pi for Android Auto
+
 https://getcrankshaft.com/
 
 
 
 
 jetson nano 其他版本的OS
+
 https://forum.libreelec.tv/thread/17950-nvidia-jetson-nano-support-any-chances-or-progress/
 
 
 
 kodi docker
+
 https://hub.docker.com/r/aliubimov/kodi-tegra
 
 
@@ -395,6 +318,7 @@ https://developer.nvidia.com/embedded/community/jetson-projects/omo_r1mini
 
 
 hello world AI jetson nano 
+
 https://github.com/dusty-nv/jetson-inference#deploying-deep-learning
 
 
@@ -417,7 +341,7 @@ Mask  R-CNN
 
 一個分類  最少要有1000張
 
-
+---
 ## GPIO
 
 ![alt text](img/jetson_gpio_pinout.png)
@@ -432,7 +356,8 @@ python3 --version
 python --version
 pip3 list
 
-#### GPIO
+### GPIO
+
 電子材料
 https://hackmd.io/@PowenKo/B1e1MVaXel
 
@@ -441,7 +366,7 @@ https://hackmd.io/@PowenKo/B1e1MVaXel
 37合一
 https://hackmd.io/Qyz_Qw6BTL6LnQS0DpU-kA
 
------
+---
 
 02_DigitalOut_easy.py
 
@@ -533,22 +458,16 @@ Docker 的雲端公共倉庫，用於存儲和分享映像檔。
 
 ### Docker run on Nano
 
-安裝 Docker Jetson Nano 官方支援 Docker，可以直接通過 APT 安裝：
+install Docker on Jetson Nano 
 
 ```bash
 sudo apt install -y docker.io
 ```
 
-檢查 Docker 是否安裝成功 執行以下命令檢查 Docker 版本：
+check Docker is installed successfully 
 ```bash
 docker --version
 ```
-
-輸出應該類似：
-    nano@linux:~$ docker --version
-
-    Docker version 20.10.21, build 20.10.21-0ubuntu1~18.04.3
-
 
 將使用者加入 Docker 群組 若希望使用者執行 Docker 不需要 sudo，執行以下命令：
 
@@ -565,47 +484,42 @@ sudo systemctl enable docker
 ```
 ### 在 Jetson Nano 上使用 Docker
 
-#### 驗證 Docker 安裝
+#### run hello-Docker 
 執行以下命令，下載並運行 Docker 測試容器：
 ```bash
 docker run hello-world
 ```
 如果 Docker 運作正常，會顯示 "Hello from Docker!" 的訊息。
 
-#### 執行支援 CUDA 的 Docker 映像檔
+#### CUDA run & test  using Docker.hub 現成image
 NVIDIA 提供了支援 CUDA 的 Docker 映像檔以加速 AI 開發。
-
-**拉取映像檔：**
-```bash
-docker pull nvcr.io/nvidia/l4t-base:r32.6.1
-```
-
-**運行容器：**
-```bash
-docker run --runtime nvidia --rm nvcr.io/nvidia/l4t-base:r32.6.1
-```
 
 **確保 NVIDIA 驅動和 CUDA 可用：**
 ```bash
 docker run --runtime nvidia --rm nvcr.io/nvidia/l4t-base:r32.6.1 nvidia-smi
 ```
+- note
+    - docker run: 如果本機有image, 會直接使用, 不會再pull, 反之會pull image
+    - CUDA RUN success, 你可以找一個pytorch image, 來體驗
 
 
-#### 安裝 Docker Compose
+接下來玩個經典案例
+```
+用 Docker Compose 跑一個 Jupyter Notebook 環境，而且是帶有 CUDA PyTorch GPU 加速的
+```
+
+#### install Docker Compose
 Jetson Nano 不預設安裝 Docker Compose，需要手動安裝：
 
 ```bash
-sudo apt install -y python3-pip
 pip3 install docker-compose
 ```
 
-#### 確認 Docker Compose 版本
-執行以下命令檢查版本：
 ```bash
 docker-compose --version
 ```
 
-#### 使用 Docker Compose(撰寫yml) 啟動多容器應用
+####  Docker Compose(撰寫yml) 啟動多容器應用
 建立 `docker-compose.yml` 檔案，例如：
 
 ```yaml
@@ -627,7 +541,7 @@ docker-compose up
 ```
 
 ---
-### Docker APP
+### Docker Application
 
 - YOLO
 - MCP Server
