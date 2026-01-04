@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jetson AI Lab - MCP Host</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: #fff; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        header { background-color: #76b900; color: #000; padding: 1rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        #chat-container { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 10px 15px; border-radius: 10px; max-width: 80%; line-height: 1.4; }
+        .user { background-color: #2d2d2d; align-self: flex-end; border: 1px solid #444; }
+        .assistant { background-color: #005f9e; align-self: flex-start; }
+        .tool-log { font-size: 0.8em; color: #aaa; align-self: center; font-style: italic; }
+        #input-area { padding: 1rem; background-color: #2d2d2d; display: flex; gap: 10px; align-items: center; }
+        input[type="text"] { flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #444; background-color: #1a1a1a; color: #fff; }
+        button { padding: 10px 20px; background-color: #76b900; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #6aa800; }
+        .toggle-container { display: flex; align-items: center; gap: 5px; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <header>
+        <div>Jetson AI Lab - MCP Host</div>
+        <div class="toggle-container">
+            <input type="checkbox" id="local-mode">
+            <label for="local-mode">Force Local LLM</label>
+        </div>
+    </header>
+    <div id="chat-container">
+        <!-- Messages will appear here -->
+        <div class="message assistant">Hello! I am your AI Assistant powered by Jetson AI Lab. How can I help you?</div>
+    </div>
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage(message, 'user');
+            input.value = '';
+
+            const useLocal = document.getElementById('local-mode').checked;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message, use_local: useLocal })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    addMessage("Error: " + data.error, 'assistant');
+                } else {
+                    addMessage(data.response, 'assistant');
+                }
+            } catch (e) {
+                addMessage("Network Error: " + e, 'assistant');
+            }
+        }
+
+        function addMessage(text, type) {
+            const container = document.getElementById('chat-container');
+            const div = document.createElement('div');
+            div.className = 'message ' + type;
+            div.textContent = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+    </script>
+</body>
+</html>
