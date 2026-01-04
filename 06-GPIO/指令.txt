@@ -1,0 +1,111 @@
+
+
+------安裝vnc------
+Step 1. 安裝VINO – VNC Server
+sudo apt update
+sudo apt install vino
+
+
+
+Step 2 . 使用gsettings來調整GNOME桌面設定，將Vino的prompt-enabled（啟用提示）以及require-encryption（需要加密）都設為false，讓VNC遠端連線不需要經過認證階段。
+
+gsettings set org.gnome.Vino prompt-enabled false
+gsettings set org.gnome.Vino require-encryption false
+
+ifconfig
+/usr/lib/vino/vino-server
+
+
+如果要一開機就開啟vnc ser可以
+
+sudo gedit ~/.bashrc
+
+添加到最後
+
+/usr/lib/vino/vino-server &
+
+
+------執行 pycharm------
+sudo apt-get install openjdk-11-jdk
+sudo gedit ~/.bashrc
+
+添加到最後
+export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+export JRE_HOME=${JAVA_HOME}/jre
+export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
+export PATH=.:${PATH_HOME}/bin:$PATH
+
+
+
+
+重新啟動 PATH:
+source ~/.bashrc
+
+測試 java command (JRE):
+java –version
+
+測試 javac command (JDK):
+javac --version
+
+
+
+執行 pycharm 
+cd ~/Desktop/pycharm-community-2023.1.2/bin
+./pycharm.sh 
+
+
+
+
+
+# ------ 安裝Jetson.GPIO------ 
+
+
+
+
+安裝PIP工具：
+
+sudo apt-get update
+sudo apt-get install python-pip
+sudo apt-get install python3-pip
+
+
+
+下載安裝Jetson.GPIO庫：
+sudo pip install Jetson.GPIO
+sudo -H pip3 install Jetson.GPIO
+
+設置用戶權限：
+
+sudo groupadd -f -r gpio
+注意：這裡的ifx 需要改成你自己的賬號名，不然庫無法正常使用
+例如：
+sudo usermod -a -G gpio ifx
+
+
+
+sudo cp lib/python/Jetson/GPIO/99-gpio.rules /etc/udev/rules.d/
+sudo cp venv/lib/pythonNN/site-packages/Jetson/GPIO/99-gpio.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules && sudo udevadm trigger
+
+
+
+
+--------01_hello_GPIO.py
+import Jetson.GPIO as GPIO
+print(GPIO.VERSION)
+print(GPIO.RPI_INFO)
+
+---------
+
+範例程式
+
+針對jetson.gpio庫，官方也提供了一些簡單的例程，例程存放在 /opt/nvidia/jetson-gpio/samples/路徑下
+
+
+cd /opt/nvidia/jetson-gpio/samples/
+
+
+
+
+
+

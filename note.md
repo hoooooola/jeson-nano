@@ -516,8 +516,8 @@ pip3 install docker-compose
 ```bash
 docker-compose --version
 ```
-
-#### 🚀 Project: Jetson AI Lab (Local LLM + MCP Architecture)
+---
+### 🚀 Project: Jetson AI Lab (Local LLM + MCP Architecture)
 
 這是一個進階的 Edge AI 專案，目標是在 Jetson Nano 上建立一個擁有「工具使用能力 (Tool Use)」的 AI 助理。
 
@@ -530,33 +530,39 @@ docker-compose --version
 
 **關鍵概念釐清：**
 > ❓ **疑問**：Gemini 或 Local LLM (dustynv) 沒辦法直接 Call MCP Server 對吧？
-> ✅ **正解**：沒錯！LLM 只是「大腦」，它只會輸出文字（例如："請幫我呼叫查詢天氣的工具"）。**需要一個「手腳 (Host App)」** 來幫它執行這些動作。
+
+> ✅ **正解**：沒錯！LLM 只是「大腦」，它只會輸出文字（例如："請幫我呼叫查詢天氣的工具"）。**需要一個「手腳」來幫它執行這些動作，這個角色就是 MCP Client (通常內建在 Host App 裡)**。
+
+> ✅ **note**：
+    - LLM 只會輸出文字，它不知道要怎麼做
+    - MCP Client 會幫host尋找最佳的 MCP Server完成任務
+    
+
 
 **系統架構圖 (System Architecture):**
 
-```mermaid
-graph TD
-    User[使用者 (Browser/Mobile)] -->|HTTP/WebSocket| FrontEnd[Flask Web UI (MCP Host)]
-    
-    subgraph "Docker Compose Network"
-        FrontEnd -->|1. Prompt| CloudLLM[Cloud LLM (Google Gemini API)]
-        FrontEnd -->|1. Prompt| LocalLLM[Local LLM (dustynv/text-generation-webui)]
-        
-        FrontEnd -->|2. Tool Request (JSON-RPC)| MCPServer1[MCP Server: Filesystem]
-        FrontEnd -->|2. Tool Request (JSON-RPC)| MCPServer2[MCP Server: Search/Hardware]
-        
-        MCPServer1 -->|3. Tool Result| FrontEnd
-        
-        LocalLLM -.->|Optional: GPU Acceleration| GPU[(NVIDIA GPU)]
-    end
-```
+![Jetson AI Lab Architecture](img/jetson_architecture.png)
+
 
 **元件職責：**
-1.  **Flask Web UI (核心控制塔/MCP Host)**: 這是您要寫的 Python 程式。
-    *   負責接收使用者輸入。
-    *   負責呼叫 LLM (Gemini 或 Local)。
-    *   **最重要**：它內建 **MCP Client** 邏輯。當 LLM 說「我要查檔案」時，Flask App 會去連線 MCP Server 執行指令，然後把結果傳回給 LLM。
-2.  **Local LLM Service**: 使用 `dustynv/jetson-containers` (例如 `l4t-text-generation` 或 `olistama`)。它只負責 "Text-in, Text-out"。
+1.  **Flask Web UI (核心控制塔 / MCP Host)**: 這是您要開發的 Python 核心應用。
+    *   **角色**：它是大腦 (LLM) 與手腳 (MCP Servers) 之間的橋樑。
+    *   **核心功能**：
+        *   **使用者介面**：接收指令 (Text/Voice)。
+        *   **LLM 串接**：將指令發送給 Gemini 或 Local LLM, 有網路時使用 Gemini, 沒網路時使用 Local LLM。
+        *   **Agentic Workflow (代理人工作流)**：這是最關鍵的部分。它內建 **MCP Client**，能讓 LLM 進行多步驟推理與行動。
+    *   **實際場景範例 (當使用者說：「Let's get moving. 開始本日行程」)**：
+        *   *Step 1 (資訊蒐集)*：LLM 判斷需要資訊，Host 透過 MCP Client 同時呼叫 **Calendar Server** (查行程) 與 **Weather Server** (查天氣)。
+        *   *Step 2 (決策推理)*：LLM 根據「下雨」與「正式會議」，建議穿著並決定交通方式。
+        *   *Step 3 (採取行動)*：LLM 發出指令，Host 透過 MCP Client 呼叫 **Robot Control Server** (去衣櫃取外套)。
+        *   *Step 4 (回報)*：Host 整合所有結果，回覆使用者「已幫您準備好外套並叫好車了」。
+2.  **Local LLM Service (離線大腦)**: 這是您的「地端推論引擎」。
+    *   **來源**: 我們不使用標準 Docker Image，而是使用 **`dustynv/jetson-containers`**。
+        *   這是 NVIDIA 工程師 (Dusty NV) 專為 Jetson 優化的專案，解決了許多 ARM64 架構與 CUDA 版本相容性的地獄問題。
+    *   **推薦容器**:
+        *   **`ollama`**: 目前最輕量好用的選擇，支援標準 API，適合 Nano 這種資源受限的板子。
+        *   **`l4t-text-generation` (Oobabooga)**: 功能強大的 WebUI，支援更多微調與外掛，但較吃資源。
+    *   **職責**: 專注於 **"Text-in, Text-out"**。它不負責聯網或操作GPIO，只負責在沒網路時，用 GPU 幫您生成文字回應。
 3.  **MCP Servers**: 獨立的 Docker 容器，負責實際髒活 (讀檔、爬蟲、GPIO 控制)。
 
 ##### 2. 實作順序 (Implementation Roadmap)
@@ -565,7 +571,7 @@ graph TD
 
 *   **Phase 1: 基礎環境 (Infrastructure)**
     *   安裝 Docker & Docker Compose (您已完成)。
-    *   拉取 `dustynv` 的優化版 Image 測試 Local LLM 是否跑得動 (Nano 跑 Llama-3-8B 會很吃力，建議跑 Phi-3 或 Qwen-2-0.5B/1.5B 等小模型)。
+    *   拉取 `dustynv` 的優化版 Image 測試 Local LLM 是否跑得動 (Nano 跑 Llama-3-8B 會很吃力，跑 Phi-3 或 Qwen-2-0.5B/1.5B 等小模型)。
 
 *   **Phase 2: "大腦" 連線 (LLM Integration)**
     *   寫一個簡單的 Python Script，能切換呼叫 Gemini API (雲端) 和 Local LLM API (地端)。
@@ -629,7 +635,7 @@ docker-compose up
 ```
 
 ---
-### Docker Application
+### Docker POP Application
 
 - YOLO
 - MCP Server
