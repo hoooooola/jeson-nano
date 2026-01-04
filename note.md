@@ -519,21 +519,12 @@ pip3 install docker-compose
 docker-compose --version
 ```
 
-####  Docker Compose(撰寫yml) 啟動多容器應用
-建立 `docker-compose.yml` 檔案，例如：
+#### make fun, make AI Lab using docker ,Jetson EcoSystem
+- Jetson Nano 是 ARM64 (aarch64) 架構
+- NVIDIA 的 L4T 函式庫
+- 不用官方的 ollama image，改用 dustynv (NVIDIA 工程師) 特別為 Nano 優化的 LLM 容器
 
-```yaml
-version: "3.8"
-services:
-  app:
-    image: nvcr.io/nvidia/l4t-pytorch:r32.6.1-pth1.9-py3
-    runtime: nvidia
-    volumes:
-      - ./workspace:/workspace
-    ports:
-      - "8888:8888"
-    command: jupyter notebook --ip=0.0.0.0 --allow-root
-```
+####  Docker Compose(撰寫yml) 啟動多容器應用
 
 啟動服務：
 ```bash
@@ -551,18 +542,6 @@ docker-compose up
 ```bash
 sudo docker kill <container_id>
 ```
-
----
-#### [Qwen AI模型](https://hub.docker.com/r/ai/qwen3)
-
-```bash
-sudo docker run -d --runtime nvidia --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
-```
-
-```bash
-sudo docker exec -it ollama ollama pull qwen:0.5b
-```
-
 ---
 ### Docker 常用指令（簡介）
 
