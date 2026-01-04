@@ -1,0 +1,43 @@
+version: '3.9' # Upgraded to 3.9 to support profiles better
+services:
+  # 1. Core Application (MCP Host + Web UI)
+  app-core:
+    build: ./app_core
+    ports:
+      - "5000:5000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_KEY}
+      - LOCAL_LLM_URL=http://local-llm:5000/v1 # Assuming OpenAI API compatibility
+      - FLASK_ENV=development
+    volumes:
+      - ./app_core:/app
+      - ./app_data:/data
+    # depends_on: # Removed strict dependency to allow running without local-llm
+    #   - local-llm
+    #   - mcp-fs
+    profiles: [ "core", "full" ] # 'core' for PC, 'full' for Nano
+    restart: unless-stopped
+
+  # 2. Local LLM (NVIDIA Optimized)
+  local-llm:
+    image: dustynv/text-generation-webui:r36.2.0
+    runtime: nvidia
+    ports:
+      - "8080:7860" # Web UI
+      - "5001:5000" # API (mapped to 5001 to avoid conflict if needed, but internal 5000 is fine)
+    volumes:
+      - ./models:/data/models
+    profiles: [ "full" ] # Only run this on Jetson Nano
+    restart: unless-stopped
+
+  # 3. Tool Server (MCP Filesystem)
+  mcp-fs:
+    build: ./mcp_fs
+    environment:
+      - PORT=8000 # Explicitly set port if supported by image, or ensure image exposes it
+    ports:
+      - "8000:8000" # Expose for host to connect
+    volumes:
+      - /media/user/windowsData/gitClone/GitProject/jesonEcosys:/host_files
+    profiles: [ "core", "full" ]
+    restart: unless-stopped

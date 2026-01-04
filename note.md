@@ -627,7 +627,6 @@ services:
 ```bash
 sudo docker kill <container_id>
 ```
-####  Docker Compose(撰寫yml) 啟動多容器應用
 
 啟動服務：
 ```bash
@@ -635,7 +634,7 @@ docker-compose up
 ```
 
 ---
-### Docker POP Application
+### Docker pop Application
 
 - YOLO
 - MCP Server
