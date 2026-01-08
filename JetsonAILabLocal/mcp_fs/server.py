@@ -1,8 +1,20 @@
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 import os
 
-# Initialize FastMCP Server
-mcp = FastMCP("filesystem-server")
+# Configure transport security to allow Docker internal DNS names
+# Disable DNS rebinding protection for Docker container-to-container communication
+security_settings = TransportSecuritySettings(
+    enable_dns_rebinding_protection=False
+)
+
+# Initialize FastMCP Server with custom security settings for Docker networking
+mcp = FastMCP(
+    "filesystem-server",
+    host="0.0.0.0",
+    port=8000,
+    transport_security=security_settings
+)
 
 @mcp.tool()
 def list_files(path: str = ".") -> str:
@@ -38,7 +50,5 @@ def read_file(path: str) -> str:
 
 
 # Expose as ASGI app for uvicorn
-# FastMCP instance itself might not be the ASGI app directly depending on version.
-# But `mcp.run()` suggests it wraps one.
-# For simplicity with 'uvicorn server:mcp', we ensure mcp is importable.
-
+# FastMCP provides sse_app() method to get the ASGI application
+app = mcp.sse_app()

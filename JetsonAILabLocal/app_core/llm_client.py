@@ -12,7 +12,7 @@ class LLMClient:
         
         if self.gemini_key:
             genai.configure(api_key=self.gemini_key)
-            self.gemini_model = genai.GenerativeModel('gemini-pro')
+            self.gemini_model = genai.GenerativeModel('gemini-2.5-flash')
         else:
             self.gemini_model = None
             print("Warning: GEMINI_API_KEY not found. Cloud fallback unavailable.")
@@ -22,21 +22,25 @@ class LLMClient:
         Generates text using either Local LLM or Gemini.
         """
         if use_local:
+            print(f"Using Local LLM for prompt: {prompt[:20]}...")
             return self._call_local_llm(prompt)
         
-        # Try Cloud first if not forced to local
+        # Explicitly check for Gemini model availability
         if self.gemini_model:
-            try:
-                return self._call_gemini(prompt)
-            except Exception as e:
-                print(f"Gemini Error: {e}. Falling back to Local LLM.")
-                return self._call_local_llm(prompt)
+            print(f"Using Gemini API for prompt: {prompt[:20]}...")
+            return self._call_gemini(prompt)
         else:
-            return self._call_local_llm(prompt)
+            return "Error: Gemini API Key not configured and use_local=False."
 
     def _call_gemini(self, prompt):
-        response = self.gemini_model.generate_content(prompt)
-        return response.text
+        try:
+            response = self.gemini_model.generate_content(prompt)
+            print("Gemini response received.")
+            return response.text
+        except Exception as e:
+            error_msg = f"Gemini API Error: {str(e)}"
+            print(error_msg)
+            return error_msg
 
     def _call_local_llm(self, prompt):
         """
