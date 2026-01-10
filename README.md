@@ -803,12 +803,221 @@ docker-compose up
 | **`-t`** | `--tty` | 終端機 (Pseudo-TTY)<br>模擬終端機顯示格式。 | 讓輸出畫面正常顯示 |
 | **`-it`**| N/A | (組合技) 進入容器互動模式 | `docker exec -it <名稱> /bin/bash` |
 
+## Jetson vs Pixhawk 架構比較
+
+| 特性 | Jetson | Pixhawk |
+| :--- | :--- | :--- |
+| **核心類型** | Linux 作業系統 | MCU (不是作業系統, 單一程式循環) |
+| **應用層級** | 軟體、資料庫、儀錶板 | 韌體控制、感測器讀取 |
+| **AI 能力** | AI (LLM, TensorFlow) | Edge AI (TensorFlow Lite for Microcontroller) |
+| **開發語言** | Python, C, C++, Java... | C, Arduino |
+| **硬體介面** | 感應器讀取 / GPIO | 感應器讀取 / GPIO |
+| **通訊連結** | USB, BT, Wifi | USB, BT, Wifi |
 
 
 
+jetson nano,  Docker
+
+https://hackmd.io/@PowenKo/r1GQOXJSbg
+
+https://blog.jmaker.com.tw/arduino-tutorials/
+
+
+ jetson 
+ pixhawk
+OS
+ MCU
+ Linux作業系統  
+軟體
+資料庫
+儀錶板
+不是作業系統, 一次只能跑一個code
+AI (LLM, tensorflow)
+AI edge邊緣運算
+ (tensorflow Lite for microcontroller)
+Python, C, C++, Java….
+C, Arduino
+感應器讀取
+感應器讀取
+GPIO
+GPIO
+USB,BT, Wifi
+USB,BT, Wifi
+
+AI edge邊緣運算
+ (tensorflow Lite for microcontroller)
+
+Python  + C
+
+
+AI 流程
+
+資料收集 (C/Python)
+訓練 (Python)
+AI 預測 (C/Python)
+
+https://www.tensorflow.org/lite/microcontrollers?hl=zh-tw
+
+ 
 
 
 
+## jetson containers
+[dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers)
 
+### Getting Started
+
+```
+# install the container tools
+git clone https://github.com/dusty-nv/jetson-containers
+bash jetson-containers/install.sh
+
+# automatically pull & run any container
+jetson-containers run $(autotag l4t-pytorch)
+```
+
+
+## GPIO
+
+## CAR
+
+[L298N](https://hackmd.io/@PowenKo/r13vVVJHZl)
+
+servo motor 應用於AMR, 
+Stepper motor
+
+L298N直流馬達驅動板 
+---
+### 04_B_L298N.py
+
+
+## Ollama
+https://ollama.com/
+
+
+## Jetson SDK(Software Development Kit), JetPack
+AI圖片影像分類, detection, segmentation
+
+Nvidia JetPack, Metropolis,Isaac,AI高效能計算機器人(HPC) Holoscan
+
+
+8.9. 啟動容器 docker 由於容器運行需要的掛載和設備多種多樣，推薦使用 docker/run.sh 腳本來運行容器：
+
+```bash
+cd ~/Desktop 
+git clone --recursive https://github.com/dusty-nv/jetson-inference 
+cd jetson-inference 
+docker/run.sh
+```
+
+### Jetson Inference 深度學習推論庫
+
+- https://github.com/dusty-nv/jetson-inference
+`jetson-inference` 是一個專為 Jetson 系列設計的即時深度學習推論 (Inference) 範例庫，使用了 NVIDIA TensorRT 來加速。
+
+#### 支援的深度學習框架 (Frameworks)
+這些框架通常用於 **訓練 (Training)** 模型，訓練好的模型再轉由 JetPack/TensorRT 在 Nano 上進行 **推論 (Inference)**。
+- **TensorFlow**
+- **PyTorch**
+
+#### 常用 AI 模型 (AI Models)
+`jetson-inference` 內建支援多種預訓練模型，可直接下載使用：
+- **GoogleNet**: 經典的圖像分類模型，準確率與效能平衡佳。
+- **ResNet-18**: 輕量級的殘差網路，非常適合 Jetson Nano 進行即時 (Real-time) 影像辨識。
+
+**應用場景：**
+1. **影像分類 (ImageNet)**: 辨識畫面中是「什麼物體」 (例如：狗、貓、車)。
+2. **物件偵測 (DetectNet)**: 找出物體在畫面中的「位置」並框選出來 (例如：行人偵測)。
+3. **語意分割 (SegNet)**: 將畫面中的每個像素進行分類 (例如：區分道路、人行道、天空)。
+
+### 實戰：使用 USB Webcam 進行即時影像辨識
+在成功執行 `docker/run.sh` 進入容器後，您可以直接使用 USB 攝影機進行推論。
+
+#### 步驟 1: 確認攝影機裝置
+請先確認您的 USB 攝影機已連接，並在終端機查看裝置代號：
+```bash
+ls /dev/video*
+# 通常是 /dev/video0 或 /dev/video1
+```
+
+#### 步驟 2: 執行影像識別 (Classification)
+使用 `imagenet.py` 來辨識畫面中央的物體。
+```bash
+# 假設您的攝影機是 /dev/video0
+./imagenet.py /dev/video0 webrtc://@:8554/output
+```
+host search 
+
+```
+http://192.168.55.1:8554
+```
+
+#### 步驟 3: 執行物件偵測 (Detection)
+使用 `detectnet.py` 來框出畫面中的人、車等物件。
+```bash
+# 這是最直觀的「影像辨識」體驗
+./detectnet.py /dev/video0 webrtc://@:8554/output
+```
+
+host search 
+
+```
+http://192.168.55.1:8554
+```
+
+> **小技巧**：如果是使用 CSI 介面的 Raspberry Pi Camera，則將 `/dev/video0` 替換為 `csi://0` 即可。
+
+
+### 串流技術大比拼：WebRTC (Web) vs RTSP (VLC)
+
+在 Jetson Nano 做遠端推論時，把畫面傳回電腦有兩種主流方式，以下是詳細比較：
+
+| 特性 | **WebRTC (網頁瀏覽器)** | **RTSP (VLC 播放器)** |
+| :--- | :--- | :--- |
+| **延遲 (Latency)** | **極低 (Low Latency)** <br> 通常 < 0.5 秒，最適合即時監控。 | **較高 (High Latency)** <br> 通常 2~5 秒 (VLC 預設會緩衝)，不適合即時互動。 |
+| **操作便利性** | **⭐⭐⭐⭐⭐ (免安裝)** <br> 用 Chrome/Edge 打開網址即可觀看。 | **⭐⭐⭐ (需安裝軟體)** <br> 電腦端需要安裝 VLC Player 或 PotPlayer。 |
+| **相容性** | 瀏覽器**擋廣告/自動播放**有時會導致黑屏，需手動點 Play。 | 支援度極高，只要連上手就能播，不易斷線。 |
+| **區網穿透** | 依賴 STUN/TURN，跨網段 (例如公司防火牆) 設定較麻煩。 | 較容易穿透防火牆，標準工業監控協議。 |
+| **多裝置支援** | 手機、平板、電腦通殺。 | 手機端也需下載 VLC App 才能看。 |
+
+#### 🎯 結論建議
+*   **開發除錯時 (您現在)**：選 **WebRTC**。因為您需要「馬上」看到結果，不希望做了動作 3 秒後畫面才動。
+*   **長期監控/錄影時**：選 **RTSP**。如果您是把 Nano 放在無人機或攝影機上做 24 小時監控，RTSP 比較穩定，且 VLC 可以輕鬆錄影存檔。
+
+#### 💡 如何使用 RTSP?
+若您想體驗 webrtc，請改用以下指令：
+```bash
+./detectnet.py /dev/video0 webrtc://@:8554/output
+```
+Chrome/Edge 瀏覽器，輸入： http://192.168.55.1:8554
+
+> **⚠️ 注意**：**RTSP 無法直接在 Chrome/Edge 網頁上開啟**。
+> 如果您堅持要用「瀏覽器」看畫面，請回到上一步使用 `webrtc://` 協定。
+
+
+
+### 無人機圖傳方案解析 (Drone Video Transmission)
+
+在無人機領域 (Drone / UAV)，影像傳輸方式取決於您的用途：
+
+| 方案 | 通訊協定 | 延遲 (Latency) | 應用場景 | Jetson Nano 整合方式 |
+| :--- | :--- | :--- | :--- | :--- |
+| **QGroundControl (標準)** | **RTSP** | 中 (200~500ms) | **工業巡檢、航拍監控** | 地面站軟體 (QGC/Mission Planner) **原生支援 RTSP**。Jetson 若跑 `rtsp://`，QGC 可直接顯示畫面。 |
+| **DIY 數位圖傳 (極速)** | **GStreamer UDP** | 低 (50~150ms) | **FPV 飛行、精細操控** | 不走 RTSP 握手過程，直接丟 H.264 封包。適合自製程式接收。 |
+| **5G/4G 雲端操控** | **WebRTC** | 低 (100~300ms) | **超視距飛行 (BVLOS)** | 利用 4G Dongle 通過網際網路傳輸，就是您目前用的這套。 |
+| **穿越機 (Racing)** | 類比 5.8G | 趨近 0 | **競速** | (不經過 Jetson，獨立鏡頭) |
+
+#### 🚀 結論：無人機通常怎麼做？
+如果是像 Jetson Nano 這種 **Companion Computer (伴飛電腦)** 架構：
+1.  通常使用 **RTSP**。
+2.  因為開源地面站軟體 **QGroundControl (QGC)** 的設定頁面裡，有一個 "Video Source" 選項，選 RTSP 並輸入 IP 就可以把 AI 畫面整合在儀表板裡了。
+
+#### 💡 技術小教室：RTSP vs UDP
+使用者常問：「RTSP 是不是用 UDP？」
+*   **答案是 YES**。
+*   **RTSP (Real Time Streaming Protocol)** 其實只是一個「遙控器」，負責告訴伺服器「開始播放」、「暫停」、「設定解析度」。
+*   **真的在傳送影像資料 (Video Data)** 時，底層通常是走 **RTP over UDP**。
+    *   **UDP (User Datagram Protocol)**：只管丟封包，不管你有沒有收到。這對無人機很重要，因為就算掉格也比畫面延遲好 (Low Latency)。
+    *   **VLC vs QGC**：這兩者都只是「接收端 (Client)」。VLC 是一個通用的播放器，而 QGC 是一個專門設計來疊加飛行數據 (OSD) 的播放器。底層收的都是同一條 RTSP (UDP) 串流。
 
 

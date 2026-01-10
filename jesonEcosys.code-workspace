@@ -1,8 +1,10 @@
 {
 	"folders": [
 		{
-			"name": "jesonEcosys",
 			"path": "."
+		},
+		{
+			"path": "../../../../../../home/user/Downloads/01-jetson-nano-AI-20260110T052121Z-1-001"
 		}
 	],
 	"settings": {}
