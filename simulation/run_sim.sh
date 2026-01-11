@@ -10,10 +10,10 @@ echo "Starting Simulation Container..."
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # Remove old container if exists
-sudo docker rm -f amr_sim 2>/dev/null || true
+docker rm -f amr_sim 2>/dev/null || true
 
 # Direct Docker Run (Bypassing docker-compose due to version issues)
-sudo docker run -itd \
+docker run -itd \
     --name amr_sim \
     --network host \
     --privileged \
@@ -25,6 +25,10 @@ sudo docker run -itd \
     jeson_ecosys/simulation:latest \
     bash
 
-# Enter the container
-echo "Entering Simulation Environment..."
-sudo docker exec -it amr_sim bash
+# Enter the container unless -d flag is provided
+if [ "$1" != "-d" ]; then
+    echo "Entering Simulation Environment..."
+    docker exec -it amr_sim bash
+else
+    echo "Container started in background."
+fi

@@ -140,71 +140,66 @@
 
 為了確保每次都能順利啟動，請遵循以下標準步驟。
 
-#### 步驟 1: 啟動環境 (Terminal 1 - 物理/Gazebo)
+### Phase 1: 標準啟動流程 (Standard Operating Procedure)
+
+我們已經將所有啟動步驟自動化，透過 `tmux` 管理所有視窗，解決了權限與視窗管理的問題。
+
+#### 步驟 1: 權限準備 (若尚未設定)
+如果遇到 `docker permission denied` 錯誤，請執行快速修復 (Dirty Fix) 或標準修復：
 ```bash
-# 1. 啟動 Container 並進入 (Host 端執行)
-cd simulation
-./run_sim.sh
-
-# 2. 啟動 Gazebo (Container 內執行)
-# 注意：第一次啟動可能需要幾秒鐘載入模型
-gz sim -v4 -r iris_runway.sdf
+# 快速修復 (直到下次重開機，不需登出)
+sudo chmod 666 /var/run/docker.sock
 ```
-*(請保持此視窗開啟，等待跑道與無人機出現)*
 
-#### 步驟 2: 啟動飛控 (Terminal 2 - 大腦/ArduPilot)
-開啟一個 **新的終端機 (New Terminal)**：
-```bash
-# 1. 進入容器
-sudo docker exec -it amr_sim bash
-
-# 2. 啟動 SITL
-./start_sitl.sh
-```
-*(此視窗會顯示 MAVProxy 控制台，您可以在此輸入 param set 或 mode 指令)*
-
-#### 步驟 3: 啟動 QGroundControl (Terminal 3 - 地面站)
-開啟一個 **新的終端機 (New Terminal - Host 端)**：
+#### 步驟 2: 一鍵啟動 (One-Click Launch)
+執行主腳本，**不需要** `sudo`：
 ```bash
 cd simulation
-# 確保您已經下載並賦予權限 (參見上方 Phase 0.5)
-./QGroundControl-x86_64.AppImage
+./launch_all.sh
 ```
-*(QGC 應會自動連線。若無反應請檢查是否與 SITL 在同一網段)*
 
-#### 步驟 4: 啟動 ROS 橋接 (Terminal 4 - MAVROS)
-開啟一個 **新的終端機 (New Terminal)**：
+#### 步驟 3: 互動選擇
+跟隨螢幕提示選擇：
+1.  **載具類型 (Vehicle)**: 選擇 `1` (ArduCopter)
+2.  **機架類型 (Frame)**: 選擇 `1` (Quad X - 四旋翼)
+
+#### 步驟 4: Tmux 控制台操作 (關鍵！)
+腳本啟動後會進入 `tmux` 介面。請熟記以下快捷鍵 (先按 `Ctrl+b` 放開，再按指令鍵)：
+- **切換視窗**:
+    - `0`: Gazebo (物理模擬)
+    - `1`: SITL (飛控 MAVProxy)
+    - `2`: MAVROS (ROS 2 橋接)
+    - `3`: QGC (地面站)
+- **分割畫面 (多工)**:
+    - `%` (`Shift`+`5`): 左右分割 (一邊看 Log，一邊下指令)
+    - `"`: 上下分割
+- **離開 (背景執行)**: `d` (Sim 繼續跑，回到 Host Terminal)
+- **重新連線**: `tmux attach -t ardu_sim`
+
+#### 步驟 5: ROS 2 指令 (在分割視窗中)
+在 `tmux` 中分割出一個新面板後，記得先進入環境：
 ```bash
 # 1. 進入容器
-sudo docker exec -it amr_sim bash
-
-# 2. 啟動 MAVROS
-./start_mavros.sh
+docker exec -it amr_sim bash
+# 2. 載入 ROS 2 設定
+source /opt/ros/humble/setup.bash
+# 3. 測試
+ros2 topic list
 ```
-*(看到 CON: Got HEARTBEAT 代表 ROS 2 已成功連接飛控)*
-
-#### 步驟 5: 起飛驗證
-在 QGC 點擊 "Takeoff" 或在 Terminal 2 (MAVProxy) 輸入：
-```bash
-MAV> mode GUIDED
-MAV> arm throttle
-MAV> takeoff 10
-```
-
-![alt text](image.png)
 
 ---
 
-### 5. 踩坑紀錄與解決方案 (Troubleshooting Log)
+### 5. 工程筆記與踩坑紀錄 (Engineering Notes)
 
-以下記錄建置過程中遇到關鍵問題與解決方法：
+以下記錄本次架構重構的關鍵決策與問題解決：
 
 | 問題 (Issue) | 症狀 (Symptom) | 原因 (Cause) | 解決方案 (Solution) |
 | :--- | :--- | :--- | :--- |
-| **Protocol Magic Error** | `Bad Protocol Magic 0`, `Link 1 down` | ArduPilot 預設二進位格式不相容於新版插件。 | 啟動時必須加上 `-f JSON` 參數 (已包含在 `start_sitl.sh`)。 |
-| **GPU 權限不足** | `libEGL warning: failed to open /dev/dri/renderD128` | Docker 內使用者無權存取宿主機顯卡。 | `sudo chmod 666 /dev/dri/renderD128`。 |
-| **Frame Class Error** | `PreArm: Motors: Check frame class and type` | JSON 模式未載入特定機型預設值。 | 手動設定 `FRAME_CLASS 1` (Quad) 與 `FRAME_TYPE 1` (X)。 |
-| **重啟後斷線** | `reboot` 後 `connection refused` | SITL 程序重啟導致網路斷開。 | 手動重啟腳本即可。 |
+| **Docker Permission** | `permission denied /var/run/docker.sock` | 登入 Session 尚未更新 `docker` 群組權限。 | **Quick Fix**: `sudo chmod 666 /var/run/docker.sock` (實戰常用)<br>**Std Fix**: 登出再登入。 |
+| **Identity vs Capability** | `User not in docker group` 但其实能跑 | 腳本使用 `groups` (字串檢查) 太嚴格，未考慮 Dirty Fix 情況。 | **Logic Change**: 改用 `docker ps` (功能檢查/Try-Run)。"Don't check who I am, check what I can do." |
+| **Terminal Deadlock** | `gnome-terminal` 卡住或無法啟動 | `sudo` 執行破壞了 DBus Session 連線 (Client-Server 權限不符)。 | **Switch to tmux**。<br>`tmux` 為獨立 Process，不依賴 DBus，且支援 Session Recovery (不怕斷線)。 |
+| **Protocol Magic** | `Bad Protocol Magic 0` | ArduPilot 預設二進位格式不相容於 Gazebo Harmonic。 | 啟動參數加上 `-f JSON` (已內建於腳本)。 |
+| **Protocol Magic** | `Bad Protocol Magic 0` | ArduPilot 預設二進位格式不相容於新版插件。 | 啟動時必須加上 `-f JSON` 參數。 |
 
 在這個模擬環境中，可以進行「**由淺入深**」的四階段測試：
 
