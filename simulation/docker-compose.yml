@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  sitl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jeson_ecosys/simulation:latest
+    container_name: amr_sim
+    network_mode: host
+    privileged: true
+    tty: true
+    stdin_open: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      # - NVIDIA_VISIBLE_DEVICES=all
+      # - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./:/home/dev/workspace/shared:rw
+    devices:
+      - /dev/dri:/dev/dri
+    command: bash
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    # NOTE: Uncomment 'deploy' section if using NVIDIA GPU
