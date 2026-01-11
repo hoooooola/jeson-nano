@@ -142,44 +142,56 @@
 
 #### 步驟 1: 啟動環境 (Terminal 1 - 物理/Gazebo)
 ```bash
-# 1. 啟動 Docker 容器 (如果尚未啟動)
+# 1. 啟動 Container 並進入 (Host 端執行)
+cd simulation
 ./run_sim.sh
 
-# 2. (必做) 解決顯卡權限問題 (在容器內執行)
-# 這能解決 libEGL warning 並大幅提升模擬順暢度
-sudo chmod 666 /dev/dri/renderD128
-
-# 3. 啟動 Gazebo 模擬環境
+# 2. 啟動 Gazebo (Container 內執行)
+# 注意：第一次啟動可能需要幾秒鐘載入模型
 gz sim -v4 -r iris_runway.sdf
 ```
-*(等待 Gazebo 視窗完全載入並看到跑道)*
+*(請保持此視窗開啟，等待跑道與無人機出現)*
 
 #### 步驟 2: 啟動飛控 (Terminal 2 - 大腦/ArduPilot)
-開啟一個新的終端機視窗：
+開啟一個 **新的終端機 (New Terminal)**：
 ```bash
-# 1. 進入執行中的容器
+# 1. 進入容器
 sudo docker exec -it amr_sim bash
 
-# 2. 啟動 SITL (使用我們建立的腳本)
-# 或是手動輸入: sim_vehicle.py -v ArduCopter -f JSON --console --map
+# 2. 啟動 SITL
 ./start_sitl.sh
 ```
+*(此視窗會顯示 MAVProxy 控制台，您可以在此輸入 param set 或 mode 指令)*
 
-#### 步驟 3: 首次設定 (初次執行時必做)
-如果 Console 出現 `PreArm: Motors: Check frame class and type`：
+#### 步驟 3: 啟動 QGroundControl (Terminal 3 - 地面站)
+開啟一個 **新的終端機 (New Terminal - Host 端)**：
 ```bash
-MAV> param set FRAME_CLASS 1  # 1=Multicopter
-MAV> param set FRAME_TYPE 1   # 1=X-Frame
-MAV> reboot
+cd simulation
+# 確保您已經下載並賦予權限 (參見上方 Phase 0.5)
+./QGroundControl-x86_64.AppImage
 ```
-*注意：`reboot` 後若連線中斷 (EOF)，請按 Ctrl+C 結束並重新執行 `./start_sitl.sh`。*
+*(QGC 應會自動連線。若無反應請檢查是否與 SITL 在同一網段)*
 
-#### 步驟 4: 起飛驗證
+#### 步驟 4: 啟動 ROS 橋接 (Terminal 4 - MAVROS)
+開啟一個 **新的終端機 (New Terminal)**：
+```bash
+# 1. 進入容器
+sudo docker exec -it amr_sim bash
+
+# 2. 啟動 MAVROS
+./start_mavros.sh
+```
+*(看到 CON: Got HEARTBEAT 代表 ROS 2 已成功連接飛控)*
+
+#### 步驟 5: 起飛驗證
+在 QGC 點擊 "Takeoff" 或在 Terminal 2 (MAVProxy) 輸入：
 ```bash
 MAV> mode GUIDED
 MAV> arm throttle
 MAV> takeoff 10
 ```
+
+![alt text](image.png)
 
 ---
 

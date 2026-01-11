@@ -30,8 +30,28 @@ if [[ ":$PATH:" != *":$ARDUPILOT_TOOLS:"* ]]; then
     fi
 fi
 
-# Launch SITL with correct flags
-# -v ArduCopter: Select Vehicle
-# -f JSON: Force JSON protocol for new Gazebo plugin compliance
+# Default values
+VEHICLE="ArduCopter"
+EXTRA_ARGS=""
+
+# Parse Arguments from launch_all.sh
+# $1: Vehicle Type (e.g., ArduCopter, ArduRover)
+# $2: Parameter File Path (inside container)
+if [ -n "$1" ]; then
+    VEHICLE="$1"
+fi
+
+if [ -n "$2" ]; then
+    echo "Loading parameters from: $2"
+    # --add-param-file argument allows MAVProxy to load custom params on startup
+    EXTRA_ARGS="--add-param-file=$2"
+fi
+
+echo "Starting SITL for Vehicle: $VEHICLE"
+
+# Launch SITL
+# -v: Vehicle type
+# -f JSON: Force JSON protocol for Gazebo
 # --console --map: Launch MAVProxy GUI
-sim_vehicle.py -v ArduCopter -f JSON --console --map
+cd $SCRIPT_DIR/ardupilot/$VEHICLE
+../Tools/autotest/sim_vehicle.py -v $VEHICLE -f JSON --console --map $EXTRA_ARGS
