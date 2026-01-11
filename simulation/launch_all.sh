@@ -21,6 +21,36 @@ check_docker_group() {
     fi
 }
 
+cleanup_old_processes() {
+    echo "Checking for existing SITL processes..."
+    
+    # Count existing processes
+    MAVPROXY_COUNT=$(pgrep -f mavproxy.py 2>/dev/null | wc -l)
+    ARDUCOPTER_COUNT=$(pgrep arducopter 2>/dev/null | wc -l)
+    
+    if [ "$MAVPROXY_COUNT" -gt 0 ] || [ "$ARDUCOPTER_COUNT" -gt 0 ]; then
+        echo "⚠️  Found existing processes:"
+        echo "   MAVProxy instances: $MAVPROXY_COUNT"
+        echo "   ArduCopter instances: $ARDUCOPTER_COUNT"
+        echo ""
+        echo "Cleaning up old processes..."
+        
+        # Kill old tmux session
+        tmux kill-session -t $SESSION 2>/dev/null || true
+        
+        # Kill processes
+        pkill -9 -f mavproxy.py 2>/dev/null || true
+        pkill -9 arducopter 2>/dev/null || true
+        
+        # Wait for cleanup
+        sleep 2
+        echo "✓ Cleanup completed"
+    else
+        echo "✓ No existing processes found"
+    fi
+}
+
+
 select_frame() {
     echo "============================================="
     echo "   ArduPilot Simulation Launcher (tmux)      "
@@ -91,6 +121,7 @@ ensure_container() {
 
 # 1. Pre-flight Checks
 check_docker_group
+cleanup_old_processes
 select_frame
 ensure_container
 

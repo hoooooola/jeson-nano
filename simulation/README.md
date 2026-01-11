@@ -152,11 +152,14 @@ sudo chmod 666 /var/run/docker.sock
 ```
 
 #### 步驟 2: 一鍵啟動 (One-Click Launch)
-執行主腳本，**不需要** `sudo`：
+執行主腳本,**不需要** `sudo`:
 ```bash
 cd simulation
 ./launch_all.sh
 ```
+
+> 💡 **自動清理**: 腳本會自動檢測並清理舊的 MAVProxy/ArduCopter 進程,避免多實例衝突。
+> 如需手動清理環境,可執行: `./stop_all.sh`
 
 #### 步驟 3: 互動選擇
 跟隨螢幕提示選擇：
@@ -201,13 +204,15 @@ ros2 topic echo /mavros/state
 ```
 
 #### 重新啟動程序
-如需重新啟動模擬：
+如需重新啟動模擬:
 ```bash
-# 停止 tmux session
-tmux kill-session -t ardu_sim
-
-# 重新執行
+# 方法 1: 使用清理腳本 (推薦)
+./stop_all.sh
 ./launch_all.sh
+
+# 方法 2: 手動停止 tmux session
+tmux kill-session -t ardu_sim
+./launch_all.sh  # 腳本會自動清理殘留進程
 ```
 
 > 💡 **詳細操作指南**: 請參考 [`啟動程序.md`](./啟動程序.md) 獲取完整的 Tmux 快捷鍵、故障排除和進階操作說明。
@@ -225,41 +230,8 @@ tmux kill-session -t ardu_sim
 | 2026-01-10 | **Terminal Deadlock** | `gnome-terminal` 卡住或無法啟動 | `sudo` 執行破壞了 DBus Session 連線 (Client-Server 權限不符)。 | **Switch to tmux**。`tmux` 為獨立 Process，不依賴 DBus，且支援 Session Recovery。 |
 | 2026-01-10 | **Protocol Magic** | `Bad Protocol Magic 0` | ArduPilot 預設二進位格式不相容於 Gazebo Harmonic。 | 啟動參數加上 `-f JSON` (已內建於 `start_sitl.sh`)。 |
 | **2026-01-11** | **Container Not Running** | `Error: container ... is not running`<br>只有 QGC 成功啟動 | 1. `launch_all.sh` 使用 `docker compose` (V2 語法)<br>2. 系統為 docker-compose v1.29.2<br>3. 舊容器元數據導致 `KeyError: 'ContainerConfig'` | **修復**: 改用 `docker-compose up -d sitl` (V1 語法)<br>**清理**: `docker rm -f` 移除舊容器 |
+| **2026-01-11** | **MAVProxy Link 1 Down** | MAVProxy 顯示 `link 1 down`<br>持續 `Waiting for heartbeat`<br>QGC 無法連接 | **多實例競爭**: 系統中有 7 個 MAVProxy 進程同時連接同一個 SITL (端口 5760),造成:<br>1. 心跳訊息被其他實例消耗<br>2. 端口 14550 (QGC) 被佔用<br>3. 發送緩衝區積壓 12KB+ 數據 | **Solution 1**: 創建 `stop_all.sh` 清理腳本<br>**Solution 2**: `launch_all.sh` 添加 `cleanup_old_processes()` 自動清理<br>**Root Fix**: 改用 capability-based check (`docker ps`) 而非 identity check (`groups`) |
 
-#### 2026-01-11 故障排除詳細記錄
-
-**問題現象**:
-- 執行 `./launch_all.sh` 後，tmux 四個視窗中只有 QGC 正常啟動
-- Gazebo、SITL、MAVROS 視窗都顯示 `container is not running` 錯誤
-
-**診斷過程**:
-1. 檢查容器狀態: `docker ps -a` 顯示 `amr_sim` 狀態為 `Exited (255)`
-2. 嘗試手動啟動: `docker-compose --profile sim up -d` 報錯 `KeyError: 'ContainerConfig'`
-3. 確認 Docker Compose 版本: `docker-compose version` → v1.29.2 (不支援 `docker compose` 語法)
-
-**根本原因**:
-- `launch_all.sh` 第 79 行使用了 Docker Compose V2 的指令格式 (`docker compose --profile sim up -d`)
-- 系統安裝的是 V1 版本 (1.29.2)，正確指令應為 `docker-compose` (帶連字號)
-- 舊容器殘留的元數據與 docker-compose 1.29.2 不相容
-
-**解決方案**:
-```bash
-# 1. 清理舊容器
-docker ps -a --filter "name=amr_sim" -q | xargs -r docker rm -f
-
-# 2. 修改 launch_all.sh (已完成)
-# 第 79 行: docker compose --profile sim up -d
-# 改為:   docker-compose up -d sitl
-
-# 3. 驗證修復
-docker-compose up -d sitl  # 成功啟動
-docker ps                   # 確認 amr_sim 狀態為 Up
-```
-
-**經驗教訓**:
-- Docker Compose V1 (`docker-compose`) 與 V2 (`docker compose`) 指令格式不同
-- 應在腳本中檢測版本或統一使用 V1 語法以確保相容性
-- 容器元數據問題可透過完全移除舊容器解決
 
 在這個模擬環境中，可以進行「**由淺入深**」的四階段測試：
 
