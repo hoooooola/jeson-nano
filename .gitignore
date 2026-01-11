@@ -1,0 +1,7 @@
+# QGroundControl executable
+simulation/*.AppImage
+simulation/QGroundControl-*
+
+# Log files
+simulation/logs/
+*.log
