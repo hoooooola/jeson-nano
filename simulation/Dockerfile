@@ -78,5 +78,7 @@ RUN sudo apt-get update && sudo apt-get install -y ros-humble-mavros ros-humble-
     && sudo rm -rf /var/lib/apt/lists/*
 RUN sudo /opt/ros/humble/lib/mavros/install_geographiclib_datasets.sh
 
+WORKDIR /home/$USERNAME/workspace/shared
+
 ENTRYPOINT ["/home/dev/entrypoint.sh"]
 CMD ["bash"]

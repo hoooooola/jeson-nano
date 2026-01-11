@@ -185,7 +185,7 @@ MAV> takeoff 10
 
 ### 5. 踩坑紀錄與解決方案 (Troubleshooting Log)
 
-以下記錄建置過程中遇到的關鍵問題與解決方法：
+以下記錄建置過程中遇到關鍵問題與解決方法：
 
 | 問題 (Issue) | 症狀 (Symptom) | 原因 (Cause) | 解決方案 (Solution) |
 | :--- | :--- | :--- | :--- |
@@ -194,7 +194,7 @@ MAV> takeoff 10
 | **Frame Class Error** | `PreArm: Motors: Check frame class and type` | JSON 模式未載入特定機型預設值。 | 手動設定 `FRAME_CLASS 1` (Quad) 與 `FRAME_TYPE 1` (X)。 |
 | **重啟後斷線** | `reboot` 後 `connection refused` | SITL 程序重啟導致網路斷開。 | 手動重啟腳本即可。 |
 
-在這個模擬環境中，您可以進行「**由淺入深**」的四階段測試：
+在這個模擬環境中，可以進行「**由淺入深**」的四階段測試：
 
 1.  **Level 1: 基礎控制與指令 (Basic Command)**
     *   **無人機**: 輸入 `mode GUIDED`, `arm throttle`, `takeoff 10` (起飛)。
