@@ -73,10 +73,10 @@ select_frame() {
 ensure_container() {
     echo "Checking Container Status..."
     if ! docker ps --format '{{.Names}}' | grep -q "^$CONTAINER_NAME$"; then
-        echo "Container not running. Starting with Profile 'sim'..."
-        # Use --profile sim to match the new docker-compose.yml
-        # Bypassing the old run_sim.sh to use clean docker compose w/ profiles
-        docker compose --profile sim up -d
+        echo "Container not running. Starting service 'sitl'..."
+        # Use docker-compose (v1.29.2) instead of 'docker compose'
+        # Start the 'sitl' service directly (which has profile 'sim')
+        docker-compose up -d sitl
         
         echo "Waiting for container to initialize..."
         sleep 3

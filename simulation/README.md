@@ -160,7 +160,7 @@ cd simulation
 
 #### 步驟 3: 互動選擇
 跟隨螢幕提示選擇：
-1.  **載具類型 (Vehicle)**: 選擇 `1` (ArduCopter)
+1.  **載具類型 (Vehicle)**: 選擇 `1` (ArduCopter) 或 `5` (Rover 無人車)
 2.  **機架類型 (Frame)**: 選擇 `1` (Quad X - 四旋翼)
 
 #### 步驟 4: Tmux 控制台操作 (關鍵！)
@@ -175,17 +175,42 @@ cd simulation
     - `"`: 上下分割
 - **離開 (背景執行)**: `d` (Sim 繼續跑，回到 Host Terminal)
 - **重新連線**: `tmux attach -t ardu_sim`
+- **完全停止**: `tmux kill-session -t ardu_sim`
 
-#### 步驟 5: ROS 2 指令 (在分割視窗中)
-在 `tmux` 中分割出一個新面板後，記得先進入環境：
+#### 步驟 5: 首次飛行測試
+切換到 SITL 視窗 (`Ctrl+b 1`)，輸入以下指令：
+```bash
+mode GUIDED      # 切換到導引模式
+arm throttle     # 解鎖馬達
+takeoff 10       # 起飛到 10 公尺
+land             # 降落
+```
+
+切換到 Gazebo 視窗 (`Ctrl+b 0`) 即可看到無人機動作！
+
+#### 步驟 6: ROS 2 測試 (進階)
+在 `tmux` 中分割出一個新面板 (`Ctrl+b %`)，然後進入容器：
 ```bash
 # 1. 進入容器
 docker exec -it amr_sim bash
 # 2. 載入 ROS 2 設定
 source /opt/ros/humble/setup.bash
-# 3. 測試
+# 3. 測試 MAVROS 連接
 ros2 topic list
+ros2 topic echo /mavros/state
 ```
+
+#### 重新啟動程序
+如需重新啟動模擬：
+```bash
+# 停止 tmux session
+tmux kill-session -t ardu_sim
+
+# 重新執行
+./launch_all.sh
+```
+
+> 💡 **詳細操作指南**: 請參考 [`啟動程序.md`](./啟動程序.md) 獲取完整的 Tmux 快捷鍵、故障排除和進階操作說明。
 
 ---
 
@@ -193,13 +218,48 @@ ros2 topic list
 
 以下記錄本次架構重構的關鍵決策與問題解決：
 
-| 問題 (Issue) | 症狀 (Symptom) | 原因 (Cause) | 解決方案 (Solution) |
-| :--- | :--- | :--- | :--- |
-| **Docker Permission** | `permission denied /var/run/docker.sock` | 登入 Session 尚未更新 `docker` 群組權限。 | **Quick Fix**: `sudo chmod 666 /var/run/docker.sock` (實戰常用)<br>**Std Fix**: 登出再登入。 |
-| **Identity vs Capability** | `User not in docker group` 但其实能跑 | 腳本使用 `groups` (字串檢查) 太嚴格，未考慮 Dirty Fix 情況。 | **Logic Change**: 改用 `docker ps` (功能檢查/Try-Run)。"Don't check who I am, check what I can do." |
-| **Terminal Deadlock** | `gnome-terminal` 卡住或無法啟動 | `sudo` 執行破壞了 DBus Session 連線 (Client-Server 權限不符)。 | **Switch to tmux**。<br>`tmux` 為獨立 Process，不依賴 DBus，且支援 Session Recovery (不怕斷線)。 |
-| **Protocol Magic** | `Bad Protocol Magic 0` | ArduPilot 預設二進位格式不相容於 Gazebo Harmonic。 | 啟動參數加上 `-f JSON` (已內建於腳本)。 |
-| **Protocol Magic** | `Bad Protocol Magic 0` | ArduPilot 預設二進位格式不相容於新版插件。 | 啟動時必須加上 `-f JSON` 參數。 |
+| 日期 | 問題 (Issue) | 症狀 (Symptom) | 原因 (Cause) | 解決方案 (Solution) |
+| :--- | :--- | :--- | :--- | :--- |
+| 2026-01-10 | **Docker Permission** | `permission denied /var/run/docker.sock` | 登入 Session 尚未更新 `docker` 群組權限。 | **Quick Fix**: `sudo chmod 666 /var/run/docker.sock`<br>**Std Fix**: 登出再登入。 |
+| 2026-01-10 | **Identity vs Capability** | `User not in docker group` 但其实能跑 | 腳本使用 `groups` (字串檢查) 太嚴格，未考慮 Dirty Fix 情況。 | **Logic Change**: 改用 `docker ps` (功能檢查)。"Don't check who I am, check what I can do." |
+| 2026-01-10 | **Terminal Deadlock** | `gnome-terminal` 卡住或無法啟動 | `sudo` 執行破壞了 DBus Session 連線 (Client-Server 權限不符)。 | **Switch to tmux**。`tmux` 為獨立 Process，不依賴 DBus，且支援 Session Recovery。 |
+| 2026-01-10 | **Protocol Magic** | `Bad Protocol Magic 0` | ArduPilot 預設二進位格式不相容於 Gazebo Harmonic。 | 啟動參數加上 `-f JSON` (已內建於 `start_sitl.sh`)。 |
+| **2026-01-11** | **Container Not Running** | `Error: container ... is not running`<br>只有 QGC 成功啟動 | 1. `launch_all.sh` 使用 `docker compose` (V2 語法)<br>2. 系統為 docker-compose v1.29.2<br>3. 舊容器元數據導致 `KeyError: 'ContainerConfig'` | **修復**: 改用 `docker-compose up -d sitl` (V1 語法)<br>**清理**: `docker rm -f` 移除舊容器 |
+
+#### 2026-01-11 故障排除詳細記錄
+
+**問題現象**:
+- 執行 `./launch_all.sh` 後，tmux 四個視窗中只有 QGC 正常啟動
+- Gazebo、SITL、MAVROS 視窗都顯示 `container is not running` 錯誤
+
+**診斷過程**:
+1. 檢查容器狀態: `docker ps -a` 顯示 `amr_sim` 狀態為 `Exited (255)`
+2. 嘗試手動啟動: `docker-compose --profile sim up -d` 報錯 `KeyError: 'ContainerConfig'`
+3. 確認 Docker Compose 版本: `docker-compose version` → v1.29.2 (不支援 `docker compose` 語法)
+
+**根本原因**:
+- `launch_all.sh` 第 79 行使用了 Docker Compose V2 的指令格式 (`docker compose --profile sim up -d`)
+- 系統安裝的是 V1 版本 (1.29.2)，正確指令應為 `docker-compose` (帶連字號)
+- 舊容器殘留的元數據與 docker-compose 1.29.2 不相容
+
+**解決方案**:
+```bash
+# 1. 清理舊容器
+docker ps -a --filter "name=amr_sim" -q | xargs -r docker rm -f
+
+# 2. 修改 launch_all.sh (已完成)
+# 第 79 行: docker compose --profile sim up -d
+# 改為:   docker-compose up -d sitl
+
+# 3. 驗證修復
+docker-compose up -d sitl  # 成功啟動
+docker ps                   # 確認 amr_sim 狀態為 Up
+```
+
+**經驗教訓**:
+- Docker Compose V1 (`docker-compose`) 與 V2 (`docker compose`) 指令格式不同
+- 應在腳本中檢測版本或統一使用 V1 語法以確保相容性
+- 容器元數據問題可透過完全移除舊容器解決
 
 在這個模擬環境中，可以進行「**由淺入深**」的四階段測試：
 
