@@ -49,6 +49,9 @@ fi
 
 echo "Starting SITL for Vehicle: $VEHICLE"
 
+# Disable DroneCAN to avoid DSDL compilation errors in Copter-4.6.3
+export HAL_ENABLE_DRONECAN_DRIVERS=0
+
 # Launch SITL
 # -v: Vehicle type
 # -f JSON: Force JSON protocol for Gazebo

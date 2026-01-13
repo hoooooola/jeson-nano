@@ -231,9 +231,54 @@ tmux kill-session -t ardu_sim
 | 2026-01-10 | **Protocol Magic** | `Bad Protocol Magic 0` | ArduPilot 預設二進位格式不相容於 Gazebo Harmonic。 | 啟動參數加上 `-f JSON` (已內建於 `start_sitl.sh`)。 |
 | **2026-01-11** | **Container Not Running** | `Error: container ... is not running`<br>只有 QGC 成功啟動 | 1. `launch_all.sh` 使用 `docker compose` (V2 語法)<br>2. 系統為 docker-compose v1.29.2<br>3. 舊容器元數據導致 `KeyError: 'ContainerConfig'` | **修復**: 改用 `docker-compose up -d sitl` (V1 語法)<br>**清理**: `docker rm -f` 移除舊容器 |
 | **2026-01-11** | **MAVProxy Link 1 Down** | MAVProxy 顯示 `link 1 down`<br>持續 `Waiting for heartbeat`<br>QGC 無法連接 | **多實例競爭**: 系統中有 7 個 MAVProxy 進程同時連接同一個 SITL (端口 5760),造成:<br>1. 心跳訊息被其他實例消耗<br>2. 端口 14550 (QGC) 被佔用<br>3. 發送緩衝區積壓 12KB+ 數據 | **Solution 1**: 創建 `stop_all.sh` 清理腳本<br>**Solution 2**: `launch_all.sh` 添加 `cleanup_old_processes()` 自動清理<br>**Root Fix**: 改用 capability-based check (`docker ps`) 而非 identity check (`groups`) |
+| **2026-01-12** | **DroneCAN Build Fail** | `dronecangen` 報錯或 `Namespace` object has no attribute 'protocol'<br>即使清理 build 仍失敗 | **Host 環境污染**: Native Ubuntu 的 python 套件與 ArduPilot 依賴衝突。<br>即使 `rm -rf build`，Root `wscript` 仍會嘗試調用子模組生成 DSDL。 | **Docker Solution**: 放棄 Host 編譯，轉用 `ardupilot-dev-base` Docker 容器。<br>關鍵點：<br>1. 使用 **Docker** 隔離編譯環境。<br>2. 安裝缺少的 Runtime 依賴 (`MAVProxy`, `OpenCV`, `locales`)。<br>3. 修正 Host/Container **Git 權限** (`safe.directory`)。 |
+| **2026-01-13** | **GPU Permission in Docker** | `libEGL warning: Permission denied`<br>ArduPilot Plugin 持續 reset<br>MAVProxy 無 heartbeat | Dockerfile `USER dev` 寫死，未加入 `video`/`render` 群組。<br>`chmod 666` 無效，因 DRM/EGL 需 kernel authentication。 | **ADR-0003**: 修改 docker-compose 加入 `user: "${UID}:${GID}"` 與 `group_add: [video, render]`。<br>詳見 [`docs/adr/ADR-0003-gpu-access.md`](./docs/adr/ADR-0003-gpu-access.md) |
+
+### 6. 工程文檔索引 (Documentation Index)
+
+| 文檔 | 描述 |
+|------|------|
+| [`docs/adr/ADR-0003-gpu-access.md`](./docs/adr/ADR-0003-gpu-access.md) | GPU 存取決策紀錄 (Intel iGPU + Docker) |
+| [`docs/timing-review.md`](./docs/timing-review.md) | Gazebo + ArduPilot Timing 穩定性分析 |
+
+### 7. 診斷工具 (Diagnostic Tools)
+
+#### sim-doctor
+一鍵檢查 GPU / SITL Port / MAVLink Heartbeat：
+```bash
+# 在容器內執行
+docker exec -it amr_sim ./tools/sim-doctor.sh
+
+# 或在 Host 執行（需先 chmod +x）
+./tools/sim-doctor.sh
+```
+
+**快速判讀**：
+| 結果 | 意義 |
+|------|------|
+| `Renderer = Intel/Mesa/iris` | ✅ GPU OK |
+| `Renderer = llvmpipe` | ⚠️ CPU fallback |
+| `5760 NOT listening` | ❌ SITL 未啟動 |
+| `No heartbeat` | ❌ Gazebo/SITL timing 問題 |
 
 
-在這個模擬環境中，可以進行「**由淺入深**」的四階段測試：
+---
+### todo
+
+✔ 現在該做
+
+- [x] 把 container 持久化（已在 `launch_all.sh` 透過 `sitl_runner` 實現）
+
+- [ ] 把 SITL 與 Gazebo 完全解耦
+
+- [ ] 讓 sim-doctor 成為 single source of truth
+
+用網路 repo 對照：
+
+「他為什麼不會 reset？」
+
+「他 heartbeat 怎麼走？」
+---
 
 1.  **Level 1: 基礎控制與指令 (Basic Command)**
     *   **無人機**: 輸入 `mode GUIDED`, `arm throttle`, `takeoff 10` (起飛)。

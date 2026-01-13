@@ -5,6 +5,11 @@ SESSION="ardu_sim"
 WORKSPACE_DIR="/home/dev/workspace/shared"
 CONTAINER_NAME="amr_sim"
 
+# SITL 專用持久化容器
+SITL_CONTAINER_NAME="sitl_runner"
+SITL_IMAGE="ardupilot/ardupilot-dev-base:latest"
+SITL_WORKDIR="/home/dev/workspace/shared/ardupilot"
+
 # ==============================================================================
 # Helper Functions
 # ==============================================================================
@@ -38,7 +43,11 @@ cleanup_old_processes() {
         # Kill old tmux session
         tmux kill-session -t $SESSION 2>/dev/null || true
         
-        # Kill processes
+        # Kill processes inside SITL container
+        docker exec $SITL_CONTAINER_NAME pkill -9 -f mavproxy.py 2>/dev/null || true
+        docker exec $SITL_CONTAINER_NAME pkill -9 arducopter 2>/dev/null || true
+        
+        # Kill processes on host (fallback)
         pkill -9 -f mavproxy.py 2>/dev/null || true
         pkill -9 arducopter 2>/dev/null || true
         
@@ -49,7 +58,6 @@ cleanup_old_processes() {
         echo "✓ No existing processes found"
     fi
 }
-
 
 select_frame() {
     echo "============================================="
@@ -116,6 +124,87 @@ ensure_container() {
 }
 
 # ==============================================================================
+# SITL Persistent Container Functions (NEW)
+# ==============================================================================
+
+ensure_sitl_container() {
+    echo "🔧 Checking SITL container ($SITL_CONTAINER_NAME)..."
+    
+    FIRST_RUN=false
+    
+    # 1. Check if container exists
+    if ! docker ps -a --format '{{.Names}}' | grep -q "^${SITL_CONTAINER_NAME}$"; then
+        echo "   → Container does not exist. Creating..."
+        docker create \
+            --name $SITL_CONTAINER_NAME \
+            --net=host \
+            --privileged \
+            -u 0 \
+            -v "$(pwd):/home/dev/workspace/shared" \
+            -v /tmp/.X11-unix:/tmp/.X11-unix \
+            -e DISPLAY=$DISPLAY \
+            -w $SITL_WORKDIR \
+            $SITL_IMAGE \
+            /bin/bash -c "while true; do sleep 3600; done"
+        echo "   ✓ Container created"
+        FIRST_RUN=true
+    else
+        echo "   ✓ Container exists"
+    fi
+    
+    # 2. Check if container is running
+    if ! docker ps --format '{{.Names}}' | grep -q "^${SITL_CONTAINER_NAME}$"; then
+        echo "   → Container not running. Starting..."
+        docker start $SITL_CONTAINER_NAME
+        sleep 2
+        echo "   ✓ Container started"
+    else
+        echo "   ✓ Container already running"
+    fi
+    
+    # 3. Ensure git safe.directory is set (idempotent)
+    echo "   → Setting git safe.directory..."
+    docker exec $SITL_CONTAINER_NAME git config --global --add safe.directory $SITL_WORKDIR 2>/dev/null || true
+    echo "   ✓ Git configured"
+    
+    # 4. First-run setup: install MAVProxy and dependencies
+    if [ "$FIRST_RUN" = true ] || ! docker exec $SITL_CONTAINER_NAME which mavproxy.py >/dev/null 2>&1; then
+        echo "   → Running first-time setup (installing MAVProxy, etc.)..."
+        docker exec -it $SITL_CONTAINER_NAME /bin/bash -c "cd $SITL_WORKDIR && ./setup_sitl_env.sh"
+        echo "   ✓ First-time setup completed"
+    else
+        echo "   ✓ MAVProxy already installed"
+    fi
+}
+
+ensure_sitl_ready() {
+    echo "🔧 Checking SITL build status..."
+    
+    # Fixed path inside container
+    SITL_BINARY="$SITL_WORKDIR/build/sitl/bin/arducopter"
+    
+    # Check if binary exists
+    if docker exec $SITL_CONTAINER_NAME test -f "$SITL_BINARY"; then
+        echo "   ✓ SITL binary exists. Skipping build."
+        return 0
+    fi
+    
+    echo "   → SITL binary not found. Running first-time setup..."
+    
+    # First-time setup: git safe.directory + setup_sitl_env.sh + build
+    docker exec -it $SITL_CONTAINER_NAME /bin/bash -c "
+        git config --global --add safe.directory $SITL_WORKDIR
+        ./setup_sitl_env.sh
+        export LANG=en_US.UTF-8
+        export LC_ALL=en_US.UTF-8
+        cd $SITL_WORKDIR/ArduCopter
+        ../Tools/autotest/sim_vehicle.py -v ArduCopter --no-mavproxy -w
+    "
+    
+    echo "   ✓ First-time setup completed"
+}
+
+# ==============================================================================
 # Main Execution
 # ==============================================================================
 
@@ -124,6 +213,7 @@ check_docker_group
 cleanup_old_processes
 select_frame
 ensure_container
+ensure_sitl_container
 
 # 2. Check/Kill existing session to avoid conflict
 if tmux has-session -t $SESSION 2>/dev/null; then
@@ -138,12 +228,11 @@ echo "Starting tmux session..."
 tmux new-session -d -s $SESSION -n 'Gazebo'
 tmux send-keys -t $SESSION:Gazebo "docker exec -it $CONTAINER_NAME gz sim -v4 -r iris_runway.sdf" C-m
 
-# Window 1: SITL
-# Wait for Gazebo to be ready (dumb sleep for now, better would be port check)
-# But SITL connects TO Gazebo, so Gazebo should be up first.
+# Window 1: SITL (Persistent Container Mode)
+# Only runs setup/build on first launch; subsequent launches are instant
 tmux new-window -t $SESSION -n 'SITL'
 tmux send-keys -t $SESSION:SITL "echo 'Waiting for Gazebo...'; sleep 3" C-m
-tmux send-keys -t $SESSION:SITL "docker exec -it $CONTAINER_NAME $WORKSPACE_DIR/start_sitl.sh $VEHICLE $PARAM_FILE" C-m
+tmux send-keys -t $SESSION:SITL "docker exec -it $SITL_CONTAINER_NAME /bin/bash -c 'export LANG=en_US.UTF-8 && export LC_ALL=en_US.UTF-8 && $WORKSPACE_DIR/start_sitl.sh $VEHICLE $PARAM_FILE'" C-m
 
 # Window 2: MAVROS
 tmux new-window -t $SESSION -n 'MAVROS'
@@ -164,3 +253,4 @@ fi
 tmux select-window -t $SESSION:Gazebo
 echo "Attaching to session..."
 tmux attach -t $SESSION
+
