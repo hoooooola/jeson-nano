@@ -57,4 +57,4 @@ export HAL_ENABLE_DRONECAN_DRIVERS=0
 # -f JSON: Force JSON protocol for Gazebo
 # --console --map: Launch MAVProxy GUI
 cd $SCRIPT_DIR/ardupilot/$VEHICLE
-../Tools/autotest/sim_vehicle.py -v $VEHICLE -f JSON --console --map $EXTRA_ARGS
+../Tools/autotest/sim_vehicle.py -v $VEHICLE -f JSON --console --map $EXTRA_ARGS --no-mavproxy -A "--sitl-ip-allow=0.0.0.0"

@@ -1,23 +1,69 @@
 version: '3.9'
 
+networks:
+  sim_net:
+    driver: bridge
+
 services:
+  # SITL Service (Flight Controller Core)
   sitl:
-    # Profile: Simulation
-    # Defines this service as part of the 'sim' group.
-    profiles: ["sim"]
-    
+    profiles: [ "sim" ]
+    image: ardupilot/ardupilot-dev-base:latest
+    container_name: sitl_runner
+    hostname: sitl
+    networks:
+      - sim_net
+
+    # Run as root to allow netstat and easy binary execution
+    privileged: true
+    user: "0:0"
+
+    entrypoint: /home/dev/workspace/shared/scripts/start_sitl_binary.sh
+
+    environment:
+      - INSTANCE=0
+      - DISPLAY=${DISPLAY}
+
+    ports:
+      - "14550:14550/udp" # GCS out to Host
+
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./:/home/dev/workspace/shared:rw
+
+    working_dir: /home/dev/workspace/shared
+
+    # Real UDP Healthcheck: Wait for SITL to open port 9002 (Physics In)
+    healthcheck:
+      test: [ "CMD-SHELL", "netstat -uln | grep :9002 || exit 1" ]
+      interval: 2s
+      timeout: 2s
+      retries: 5
+      start_period: 5s
+
+  # Gazebo Service (Physics & ROS 2)
+  gazebo:
+    profiles: [ "sim" ]
     image: jeson_ecosys/simulation:latest
     container_name: amr_sim
-    network_mode: host
-    
-    # Security: Removed 'privileged: true'
-    # Replaced with specific capabilities and device mappings
+    hostname: gazebo
+    networks:
+      - sim_net
+
+    entrypoint: /home/dev/workspace/shared/scripts/start_gazebo_with_injection.sh
+
+    depends_on:
+      sitl:
+        condition: service_healthy # Wait for SITL to be ready
+
     cap_add:
-      - SYS_NICE # Required for real-time scheduling in SITL
-    
+      - SYS_NICE
+
     devices:
-      - /dev/dri:/dev/dri # GPU acceleration for Gazebo
-      # Add other devices here only if needed (e.g., /dev/input)
+      - /dev/dri:/dev/dri
+
+    ports:
+      - "11345:11345" # Gazebo Network API
 
     environment:
       - DISPLAY=${DISPLAY}
@@ -28,6 +74,5 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ./:/home/dev/workspace/shared:rw
+    # No default command needed as entrypoint handles it
 
-    # Ensure container stays alive for exec commands
-    command: bash -c "while true; do sleep 3600; done"
