@@ -79,13 +79,8 @@ select_frame() {
 ensure_services() {
     echo "🚀 Starting Simulation Services (Bridge Network: sim_net)..."
     
-    # Start the full stack (Gazebo + SITL)
-    # Using 'docker-compose' (V1) or 'docker compose' (V2) compatibility check
-    if command -v docker-compose &> /dev/null; then
-        docker-compose up -d
-    else
-        docker compose up -d
-    fi
+    # Start the full stack (Gazebo + SITL) using Docker Compose V2 with 'sim' profile
+    docker compose --profile sim up -d
     
     echo "Waiting for services to initialize..."
     sleep 3
@@ -115,29 +110,26 @@ select_frame
 ensure_services
 
 # 2. Create Session & Layout
-# Window 0: Gazebo (Main)
+# Window 0: Gazebo (Main) - Monitor Logs
 echo "Starting tmux session..."
 tmux new-session -d -s $SESSION -n 'Gazebo'
-tmux send-keys -t $SESSION:Gazebo "docker exec -it $CONTAINER_GAZEBO gz sim -v4 -r iris_runway.sdf" C-m
+tmux send-keys -t $SESSION:Gazebo "docker compose logs -f $CONTAINER_GAZEBO" C-m
 
-# Window 1: SITL (Decoupled Container)
-# Connect to 'sitl' container
+# Window 1: SITL (Decoupled Container) - Monitor Logs
+# SITL is now started automatically. We just watch the output.
 tmux new-window -t $SESSION -n 'SITL'
-tmux send-keys -t $SESSION:SITL "echo 'Waiting for Gazebo...'; sleep 3" C-m
-# IMPORTANT: We pass -I0 to ensure MAVLink binds to all interfaces (including the bridge IP)
-# Actually start_sitl.sh handles the call. We might need to adjust it to listen on 0.0.0.0?
-# In decoupled mode, SITL is the server for Gazebo plugin? Or Gazebo plugin connects to SITL?
-# Standard ArduPilot Plugin: Gazebo connects to SITL TCP port, or SITL sends UDP?
-# Usually SITL binds to port 5760 (TCP). Gazebo Plugin connects to SITL_IP:5760.
-tmux send-keys -t $SESSION:SITL "docker exec -it $CONTAINER_SITL /bin/bash -c 'export LANG=en_US.UTF-8 && $WORKSPACE_DIR/start_sitl.sh $VEHICLE $PARAM_FILE'" C-m
+tmux send-keys -t $SESSION:SITL "docker compose logs -f $CONTAINER_SITL" C-m
 
 # Window 2: MAVROS
+# MAVROS is currently embedded in the Gazebo container (amr_sim).
+# We exec into it to start/monitor MAVROS if it's not part of the entrypoint.
 tmux new-window -t $SESSION -n 'MAVROS'
-tmux send-keys -t $SESSION:MAVROS "echo 'Waiting for SITL...'; sleep 8" C-m
-# MAVROS runs in Gazebo container (as per docker-compose definition/legacy) or separate?
-# Ideally separate, but for now it's in 'amr_sim' (Gazebo service) based on build?
-# If MAVROS is in 'amr_sim', it needs to talk to 'sitl' hostname.
-tmux send-keys -t $SESSION:MAVROS "docker exec -it $CONTAINER_GAZEBO $WORKSPACE_DIR/start_mavros.sh" C-m
+tmux send-keys -t $SESSION:MAVROS "echo 'Monitoring MAVROS...'" C-m
+# Assuming MAVROS is auto-started or needs manual start?
+# For now, let's keep it manual or log watch if it's part of gazebo container startup.
+# If start_gazebo_with_injection.sh starts MAVROS backgrounded, we check logs.
+# If not, users might want a shell.
+tmux send-keys -t $SESSION:MAVROS "docker exec -it $CONTAINER_GAZEBO bash" C-m
 
 # Window 3: QGC
 tmux new-window -t $SESSION -n 'QGC'

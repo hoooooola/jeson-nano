@@ -33,13 +33,14 @@ services:
 
     working_dir: /home/dev/workspace/shared
 
-    # Real UDP Healthcheck: Wait for SITL to open port 9002 (Physics In)
+    # TCP Healthcheck: Wait for SITL Console to open port 5760 (TCP)
+    # 5760 in Hex is 1680. This confirms ArduPilot is running and ready.
     healthcheck:
-      test: [ "CMD-SHELL", "netstat -uln | grep :9002 || exit 1" ]
+      test: [ "CMD-SHELL", "grep -q ':1680' /proc/net/tcp || exit 1" ]
       interval: 2s
-      timeout: 2s
+      timeout: 1s
       retries: 5
-      start_period: 5s
+      start_period: 1s
 
   # Gazebo Service (Physics & ROS 2)
   gazebo:

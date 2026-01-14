@@ -269,7 +269,7 @@ docker exec -it amr_sim ./tools/sim-doctor.sh
 
 - [x] 把 container 持久化（已在 `launch_all.sh` 透過 `sitl_runner` 實現）
 
-- [ ] 把 SITL 與 Gazebo 完全解耦
+- [ ] 把 SITL 與 Gazebo 完全解耦 docker upgrade sitl_runner  | No JSON sensor message received, resending servos
 
 - [ ] 讓 sim-doctor 成為 single source of truth
 
