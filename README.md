@@ -1258,5 +1258,383 @@ segnet    --network=fcn-resnet18-cityscapes-512x256      /dev/video0 webrtc://@:
 - dji neo 判斷action後 ROS 送出去
 - resNet 
 
+### WebRTC Flask App Deployment
 
-## driver dev
+將多個 AI 模型功能整合至單一 Flask Web 應用程式 (Web 2.0)，並透過 WebRTC 串流影像。
+*   **官方文件**: [webrtc-flask.md](https://github.com/dusty-nv/jetson-inference/blob/master/docs/webrtc-flask.md)
+
+#### 1. 前置安裝 (Prerequisites)
+更新 pip 並安裝必要的 Python  SSL 支援套件。
+```bash
+$ pip3 install --upgrade pip
+$ pip3 install pyopenssl
+```
+
+#### 2. 產生 SSL/TLS 憑證 (Generate SSL Certificates)
+為了使用 WebRTC，瀏覽器通常要求安全的 HTTPS 連線，因此需要生成自簽名憑證。
+
+1.  **安裝 OpenSSL** (如未安裝):
+    ```bash
+    # apt install openssl
+    ```
+
+2.  **生成憑證與金鑰**:
+    請切換到專案目錄 (例如 `~/Desktop/jetson-inference/python/www/flask`) 並執行：
+    ```bash
+    openssl req -x509 -newkey rsa:4096 -keyout ssl_key.pem -out ssl_cert.pem -days 365 -nodes
+    ```
+    *   **參數說明**:
+        *   `-x509`: 生成自簽名 X.509 憑證
+        *   `-newkey rsa:4096`: 建立 4096 位元 RSA 金鑰
+        *   `-keyout`: 私鑰輸出檔名
+        *   `-out`: 憑證輸出檔名
+        *   `-nodes`: 不加密私鑰 (免密碼)
+
+    執行後需輸入基本資訊 (可按 Enter 跳過或隨意填寫)：
+    *   `Country Name`: TW
+    *   `Common Name`: localhost 或 IP (例如 192.168.55.1)
+
+    完成後會產生 `ssl_key.pem` (私鑰) 與 `ssl_cert.pem` (憑證)。
+
+#### 3. 執行 Flask 應用程式 (Run the App)
+將生成的 `.pem` 檔案放在同目錄下，執行時加入 SSL 參數與指定的 AI 模型。
+
+**範例指令**:
+```bash
+python3 app.py \
+    --detection=ssd-mobilenet-v2 \
+    --pose=resnet18-hand \
+    --action=resnet18-kinetics \
+    --ssl-key=./ssl_key.pem \
+    --ssl-cert=./ssl_cert.pem \
+    --input=/dev/video0
+```
+
+
+### 訓練自己的資料集 (Training Your Own Dataset)
+- 建議使用PC, Colab 訓練
+
+#### 1. 單一物件分類 (Image Classification - ImageNet)
+訓練單一種類的物件辨識 (例如：貓 vs 狗)。
+*   **教學文件**: [pytorch-cat-dog.md](https://github.com/dusty-nv/jetson-inference/blob/master/docs/pytorch-cat-dog.md)
+
+
+*   **download or prepare your own dataset**:
+
+
+
+*   **Re-training ResNet-18 Model**
+
+
+
+
+
+*   **訓練指令範例**:
+    ```bash
+    python3 train.py --epochs=35 --resolution=224 --model-dir=models/cat_dog data/cat_dog
+    ```
+    *   `--epochs=35`: 訓練回合數 (數字越大通常準確度越高，但訓練時間越長)
+    *   `--resolution=224`: 輸入圖片的解析度大小
+
+#### 2. 多物件偵測 (Object Detection - SSD)
+在同一張畫面中辨識並框出多個物件。
+*   **教學文件**: [pytorch-ssd.md](https://github.com/dusty-nv/jetson-inference/blob/master/docs/pytorch-cat-dog.md)
+*   **教學影片**: [YouTube 教學](https://www.youtube.com/watch?v=2XMkPW_sIGg)
+
+---
+
+### NVIDIA 機器人開發全流程 (Robotics Development Workflow)
+
+1.  **Train (訓練)**
+    *   **NVIDIA DGX**: 訓練大型、通用 AI 基礎模型的最佳平台。
+    *   結合計算、網路與 GPU 優化框架 (如 NVIDIA NeMo™)，並可透過 NVIDIA NIM™ 部署。
+
+2.  **Simulate (模擬)**
+    *   **NVIDIA OVX**: 支援合成數據生成 (Synthetic Data Generation)。
+    *   使用 **NVIDIA Isaac™ Lab** 進行機器人學習。
+    *   透過 OpenUSD 與 Omniverse Cloud Sensor RTX™ 進行物理精確的場景模擬測試。
+
+3.  **Deploy (部署)**
+    *   **NVIDIA Jetson™ & IGX**: 用於部署整個機器人軟體堆疊的可擴展平台。
+    *   具備強大的 AI 邊緣運算能力、高速 I/O 以及 NVIDIA AI 軟體 (如用於視覺 AI 的 NVIDIA Metropolis)。
+
+---
+
+### NVIDIA Isaac Lab (機器人模擬與學習)
+
+*   **官方網站**: [Developer Page](https://developer.nvidia.com/isaac/lab)
+*   **原始程式碼**: [GitHub - IsaacLab](https://github.com/isaac-sim/IsaacLab)
+
+**入門指南 (Getting Started)**:
+*   **Installation steps**: 安裝步驟
+*   **Reinforcement learning**: 強化學習
+*   **Tutorials**: 教程
+*   **Available environments**: 可用環境
+
+---
+
+### ROS 2 (Robot Operating System)
+
+*   **官方文件 (Foxy 版本)**: [ROS 2 Documentation](https://docs.ros.org/en/foxy/index.html)
+*   **官方文件 (Foxy 版本)**: [ROS 2 Documentation](https://developer.nvidia.com/isaac/ros)
+
+
+
+
+
+
+
+### Disk Space 不足？Docker 空間檢視與清理 (Docker Disk Space Management)
+
+當 Jetson 的儲存空間不足時，Docker 的暫存檔、舊鏡像 (Images) 或未使用的容器 (Containers) 往往是佔用空間的元兇。以下是檢查與清理的常用指令。
+
+#### 1. 檢視 Docker 空間使用量 (Check Usage)
+查看 Docker 目前佔用了多少磁碟空間：
+```bash
+docker system df
+```
+這會顯示 Images, Containers, Local Volumes 與 Build Cache 的總大小。
+
+#### 2. 一鍵清理 (System Prune)
+清除所有 **停止的容器 (Stopped Containers)**、**未被使用的網路 (Unused Networks)** 與 **懸空的映像檔 (Dangling Images)**：
+```bash
+docker system prune
+```
+*   若要進一步刪除所有「未被任何容器使用」的映像檔 (不僅僅是懸空的)，可加上 `-a` 參數 (請小心使用)：
+    ```bash
+    docker system prune -a
+    ```
+
+#### 3. 清理 Volume (Volume Prune)
+Volumes 預設不會被 `system prune` 刪除，需手動清理未使用的 Volume：
+```bash
+docker volume prune
+```
+
+#### 4. 手動刪除特定項目
+*   **列出所有容器**: `docker ps -a`
+*   **刪除容器**: `docker rm <CONTAINER_ID>`
+*   **列出所有映像檔**: `docker images`
+*   **刪除映像檔**: `docker rmi <IMAGE_ID>`
+
+
+## Jetson nano 開發 linux tool chain 
+
+針對 NVIDIA Jetson Nano 進行 Linux 開發時，「Toolchain（工具鏈）」的選擇與建置是開發流程中最核心的一環。由於 Jetson Nano 是基於 **ARM64 (aarch64)** 架構，而一般開發者的電腦通常是 **x86_64** 架構，因此我們通常需要處理「交叉編譯 (Cross-Compilation)」的問題。
+
+以下為您簡介 Jetson Nano 開發的 Linux Toolchain 體系、常用工具與開發模式：
+
+---
+
+### 1. 什麼是 Jetson Nano 的 Toolchain？
+
+Toolchain 是一組軟體開發工具的集合，通常包含編譯器 (Compiler)、連結器 (Linker)、除錯器 (Debugger) 以及相關的標準函式庫。
+
+### 2. Toolchain 的主要用途？
+
+在嵌入式開發（如 NVIDIA Jetson）中，Toolchain 最核心的用途是解決 **架構不相容 (Architecture Mismatch)** 與 **效能最佳化 (Optimization)** 的問題。
+
+1.  **跨平台編譯 (Cross-Compilation)**:
+    *   開發者的電腦通常是 Intel/AMD x86 架構。
+    *   Jetson Nano 是 ARM64 (aarch64) 架構。
+    *   **用途**: Toolchain 讓我們能在效能強大的 x86 電腦上，編譯出給 ARM64 執行的程式碼。這比在 Nano 上直接編譯快上數十倍。
+
+2.  **硬體加速整合**:
+    *   Jetson 擁有獨特的 GPU 與加速單元 (CUDA, TensorRT, VisionWorks)。
+    *   **用途**: 專用的 Toolchain (如 JetPack SDK) 包含了連結這些硬體加速庫所需的 Compiler Flags 與 Linker Scripts，確保程式能榨出硬體極限。
+
+3.  **依賴管理與環境隔離**:
+    *   **用途**: 透過 Sysroot 或 Docker 容器化的 Toolchain，可以確保編譯環境乾淨，不會受到開發者本機雜亂的系統庫影響。
+
+在 Jetson Nano 的場景下，主要分為兩種開發模式：
+
+#### A. 原生編譯 (Native Compilation)
+*   **方式：** 直接在 Jetson Nano 上安裝 GCC/G++、CMake，直接在板子上寫程式、編譯。
+*   **優點：** 環境設定最簡單，不用擔心架構不相容，函式庫路徑直接對應。
+*   **缺點：** Jetson Nano 的 CPU/RAM 資源有限，編譯大型專案（如 OpenCV、大型 C++ 專案）會非常慢，甚至導致當機。
+*   **適用：** Python 開發、小型 C/C++ 程式、學習階段。
+
+**1. 安裝必要開發工具與 Kernel Headers**
+在開始之前，請先安裝編譯核心模組所需的工具與標頭檔：
+```bash
+sudo apt update
+# 安裝基礎編譯工具與 cmake, git
+sudo apt install -y build-essential cmake git pkg-config
+# 安裝核心模組編譯依賴
+sudo apt install -y bc kmod flex bison libssl-dev
+# 安裝 Tegra L4T Kernel Headers
+sudo apt install -y nvidia-l4t-kernel-headers
+
+# 檢查安裝路徑 (確認 build 目錄存在)
+ls -l /lib/modules/$(uname -r)/build
+```
+
+**2. 實作範例：Hello World 核心模組 (Linux Kernel Module)**
+
+*   **步驟 1：建立工作目錄**
+    ```bash
+    cd ~/Desktop
+    mkdir 01_helloworld
+    cd 01_helloworld
+    ```
+
+*   **步驟 2：撰寫 C 程式碼 (`hello.c`)**
+    使用 `nano hello.c` 建立檔案並貼上以下程式碼：
+    ```c
+    // 引入核心模組標頭檔
+    #include <linux/module.h>
+    // 引入核心相關函數標頭檔
+    #include <linux/kernel.h>
+    #include <linux/init.h>
+
+    // 定義模組初始化函數
+    static int __init hello_init(void) {
+        // 打印內核訊息 "Hello, world!"，級別為資訊 (INFO)
+        printk(KERN_INFO "Hello, world!\n");
+        return 0;
+    }
+
+    // 定義模組卸載函數
+    static void __exit hello_exit(void) {
+        // 打印內核訊息 "Goodbye, world!"，級別為資訊 (INFO)
+        printk(KERN_INFO "Goodbye, world!\n");
+    }
+
+    // 指定模組的初始化函數
+    module_init(hello_init);
+    // 指定模組的卸載函數
+    module_exit(hello_exit);
+
+    // 指定模組的授權類型為 GPL (GNU 通用公共授權)
+    MODULE_LICENSE("GPL");
+    // 指定模組作者
+    MODULE_AUTHOR("Powen Ko");
+    // 模組描述
+    MODULE_DESCRIPTION("A simple hello world kernel module");
+    ```
+    > **提示**: 在 nano 中按 `Ctrl+O` 儲存，按 `Ctrl+X` 離開。
+
+*   **步驟 3：建立 Makefile**
+    使用 `nano Makefile` 建立檔案：
+    ```makefile
+    obj-m += hello.o
+
+    all:
+    	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+
+    clean:
+    	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+    ```
+    > **注意**: Makefile 中的縮排必須使用 **Tab** 鍵，不能使用空白鍵。
+
+*   **步驟 4：編譯模組**
+    執行 `make` 進行編譯：
+    ```bash
+    # 清除舊檔案
+    make clean
+    # 開始編譯
+    make
+    # 查看產生的 .ko 檔
+    ls -l *.ko
+    ```
+
+    **測試模組 (Optional)**:
+    ```bash
+    # 載入模組
+    sudo insmod hello.ko
+    # 查看核心訊息
+    dmesg | tail
+    # 卸載模組
+    sudo rmmod hello
+    ```
+
+
+
+
+
+
+#### B. 交叉編譯 (Cross-Compilation) —— **這是 Toolchain 的重點**
+*   **方式：** 在效能強大的 x86 PC (Host) 上，使用特定的編譯器生成能在 Jetson Nano (Target) 上執行的執行檔。
+*   **優點：** 編譯速度極快，利用 PC 強大的 CPU。
+*   **缺點：** 環境建置複雜（需要設定 Sysroot、同步函式庫）。
+*   **適用：** 商業產品開發、大型專案、需要頻繁重新編譯的場景。
+
+---
+
+### 2. 核心 Toolchain 元件 (針對交叉編譯)
+
+如果您要在 x86 Linux (如 Ubuntu) 上建立 Jetson Nano 的開發環境，您需要以下元件：
+
+#### (1) 交叉編譯器 (Cross Compiler)
+這是最基礎的工具，負責將 C/C++ 程式碼轉譯成 ARM64 指令集。
+*   **工具名稱：** `aarch64-linux-gnu-gcc` / `g++`
+*   **安裝方式 (Ubuntu)：**
+    ```bash
+    sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+    ```
+    
+
+
+
+#### (2) Sysroot (系統根目錄鏡像)
+這是交叉編譯最頭痛的地方。當您的程式碼使用了 Jetson Nano 上的特定函式庫（例如 CUDA, TensorRT, OpenCV 或其他第三方 apt 安裝的庫）時，PC 端的編譯器必須知道這些庫的標頭檔 (.h) 和共享庫 (.so) 在哪裡。
+*   **做法：** 通常是將 Jetson Nano 的 `/lib`, `/usr/include`, `/usr/lib` 等目錄掛載或複製到 PC 端的一個資料夾中，並在編譯時指定該路徑為 sysroot。
+
+#### (3) Build System (建置系統)
+管理編譯流程的工具，最常用的是 **CMake**。
+*   **Toolchain File：** 使用 CMake 進行交叉編譯時，通常需要撰寫一個 `Toolchain.cmake` 檔案，告訴 CMake：
+    *   作業系統是 Linux。
+    *   目標架構是 aarch64。
+    *   編譯器路徑在哪裡。
+    *   Sysroot 路徑在哪裡。
+
+---
+
+### 3. NVIDIA 提供的開發工具 (JetPack SDK)
+
+NVIDIA 為了簡化開發，提供了一套完整的軟體堆疊，稱為 **JetPack SDK**。它不僅包含 OS (L4T - Linux for Tegra)，還包含開發所需的 Toolchain 支援。
+
+#### (1) NVIDIA SDK Manager
+這是一個圖形化工具（安裝在 Ubuntu PC 上），用於將 OS 刷入 Jetson Nano，並同時安裝 PC 端所需的 **Cross-Compile 工具** 和 **Host 端開發庫** (如 CUDA Toolkit for x86，用於模擬或相容性開發)。
+
+#### (2) Docker (容器化開發) —— **目前最推薦**
+為了避免手動設定 Toolchain 和 Sysroot 的地獄，NVIDIA 提供了 `l4t-base` 等 Docker Image。
+*   **概念：** 您可以在 Jetson Nano 上直接運行預先配置好環境的 Docker Container。
+*   **或者：** 在 PC 上使用支援 QEMU 的 Docker 進行交叉編譯（較進階）。
+
+---
+
+### 4. 現代化開發流程推薦
+
+針對 2024 年以後的開發環境，建議的 Toolchain 與工作流如下（由簡單到複雜）：
+
+#### 方案一：VS Code Remote SSH (混合模式) - **最強烈推薦**
+這不是傳統的交叉編譯，但結合了 PC 的便利與 Nano 的環境。
+1.  **PC 端：** 安裝 VS Code。
+2.  **Nano 端：** 連上網路，開啟 SSH Server。
+3.  **操作：** 使用 VS Code 的 "Remote - SSH" 套件連線到 Nano。
+4.  **流程：** 您在 PC 上打 code，但檔案實際存在 Nano 上，按下編譯時，是呼叫 Nano 的 GCC 進行**原生編譯**。
+5.  **優點：** 擁有 PC 的強大編輯器體驗，同時完全不需要煩惱 Cross-compile 的庫依賴問題。對於 Nano 這種效能尚可的板子，這是最舒適的開發方式。
+
+#### 方案二：傳統交叉編譯 (CMake Cross Compile)
+適用於 CI/CD 流水線或超大型專案。
+1.  在 Ubuntu PC 下載 Linaro 或 NVIDIA 提供的 Toolchain binaries。
+2.  將 Nano 的 rootfs (透過 rsync) 同步回 PC 的某個資料夾 (作為 Sysroot)。
+3.  編寫 `toolchain.cmake` 指向該資料夾。
+4.  `cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake ..`
+5.  `make` 生成執行檔。
+6.  `scp` 執行檔到 Nano 運行。
+
+---
+
+### 5. 總結：我該選哪種？
+
+| 需求場景 | 推薦 Toolchain / 模式 |
+| :--- | :--- |
+| **初學者 / 學習 Python** | 直接在 Nano 接螢幕鍵盤，或 Jupyter Lab。 |
+| **C++ 開發 / 中型專案** | **VS Code Remote SSH** (利用 Nano 原生編譯)。 |
+| **大型專案 / 需要極快編譯** | PC 端 Ubuntu + **GCC aarch64** + CMake Cross Compile。 |
+| **量產部署 / 依賴管理** | **Docker** 技術。 |
+
+如果您剛開始接觸 Jetson Nano Linux 開發，建議先從 **VS Code Remote SSH** 開始，這能讓您省去 90% 設定 Toolchain 的痛苦，專注於程式碼邏輯開發。
+
