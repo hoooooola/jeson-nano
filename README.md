@@ -1021,3 +1021,242 @@ Chrome/Edge 瀏覽器，輸入： http://192.168.55.1:8554
     *   **VLC vs QGC**：這兩者都只是「接收端 (Client)」。VLC 是一個通用的播放器，而 QGC 是一個專門設計來疊加飛行數據 (OSD) 的播放器。底層收的都是同一條 RTSP (UDP) 串流。
 
 
+
+## Jetson Nano AI 模型推論
+
+
+nano啟動docker
+
+```
+cd ~/jetson-inference
+docker/run.sh
+```
+
+open cam
+
+```
+ls /dev/video*
+cd ~/Desktop/jetson-inference/
+video-viewer /dev/video0
+
+```
+
+資料來源:
+
+https://docs.nvidia.com/deeplearning/dali/user-guide/docs/examples/use_cases/pytorch/resnet50/pytorch-resnet50.html
+
+原始程式:
+
+https://github.com/dusty-nv/jetson-inference/blob/master/python/examples/imagenet.py
+
+
+訓練資料:
+https://github.com/dusty-nv/jetson-inference/blob/master/docs/imagenet-training.md
+
+https://github.com/dusty-nv/jetson-inference/blob/master/docs/digits-setup.md
+
+
+
+
+---
+
+自己訓練 imagenet (一張照片只能辨識一個物體)https://github.com/dusty-nv/jetson-inference/blob/master/docs/imagenet-training.md
+
+
+自己的檔案排列方法https://github.com/NVIDIA/DIGITS/blob/master/docs/ImageFolderFormat.md
+
+
+```
+data/
+├── my-images/
+├── cat/
+│   ├── 1.jpg
+│   └── 2.jpg
+└── dog/
+    ├── 1.jpg
+    └── 2.jpg
+```
+
+
+
+
+
+
+
+
+打開訓練code
+
+```
+$ cd ~/Desktop/jetson-inference
+$ wget https://rawgit.com/dusty-nv/jetson-inference/master/tools/imagenet-subset.sh
+$ chmod +x imagenet-subset.sh
+$ mkdir 12_classes
+$ ./imagenet-subset.sh /opt/datasets/imagenet/ilsvrc12 12_classes
+```
+
+
+
+---
+
+
+
+一張圖片 找出多個物體 detectnet
+
+模型: ssd-mobilenet-v2
+
+python 的code
+```
+detectnet.py   data/images/peds_3.jpg   data/images/test/output_3.jpg
+```
+
+---
+
+detectnet.py
+
+---
+
+webcam 車輛專用
+https://github.com/dusty-nv/jetson-inference/blob/master/docs/detectnet-console-2.md#pre-trained-detection-models-available
+
+
+```
+./detectnet.py --network=TRAFFICCAMNET   /dev/video0  webrtc://@:8554/output
+```
+
+
+
+
+
+https://docs.ultralytics.com/models/yolo11/
+
+YoLo 
+
+
+
+
+### nano AI模型調整切換, 使用custome model
+
+```
+cd  jetson-inference/tools
+./download-models.sh
+```
+- 空白鍵:選取 取消
+- tab鍵: 跳到 OK, Quit, 選項
+- 修改後 選取OK  按下enter 就可以下載了
+
+
+### posenet.md
+
+https://github.com/dusty-nv/jetson-inference/blob/master/docs/posenet.md
+
+```
+python3 posenet.py /dev/video0 webrtc://@:8554/output
+```
+host 
+```
+http://192.168.55.1:8554
+```
+
+![alt text](image-2.png)
+
+
+#### hand detection
+
+```
+python3 posenet.py --network=resnet18-hand /dev/video0 webrtc://@:8554/output
+```
+
+
+idea 如果我要知道 用戶筆的是甚麼
+
+
+
+, <poseNet.ObjectPose.Keypoint object>
+   -- ID:  16 (ring_finger_4)
+   -- x:   712.683
+   -- y:   399.404
+, <poseNet.ObjectPose.Keypoint object>
+   -- ID:  17 (baby_finger_1)
+   -- x:   798.967
+   -- y:   291.573
+, <poseNet.ObjectPose.Keypoint object>
+   -- ID:  18 (baby_finger_2)
+   -- x:   787.982
+   -- y:   335.523
+, <poseNet.ObjectPose.Keypoint object>
+   -- ID:  19 (baby_finger_3)
+   -- x:   774.744
+   -- y:   369.527
+, <poseNet.ObjectPose.Keypoint object>
+   -- ID:  20 (baby_finger_4)
+   -- x:   764.975
+   -- y:   421.027
+
+把這些keypoint 整理為csv 當training data
+
+尋找model
+
+- 統計學
+-  [KNN model](https://scikit-learn.org/stable/auto_examples/neighbors/plot_classification.html#sphx-glr-auto-examples-neighbors-plot-classification-py)
+- tensorflow KNN
+
+run 時條件盡量與訓練時相同
+- cam spec 
+- 距離遠近 
+
+next step
+- 條件不同時如何準確預測
+- 背景 遠近 大小 
+- 去背景
+
+
+### depth.md
+- Monocular Depth with DepthNet 使用 DepthNet 進行單眼深度測量
+
+```
+python3 depthnet.py /dev/video0 webrtc://@:8554/output
+```
+
+```
+depthnet.py  --depth-scale=0.5   --visualize="depth"  --network=monodepth-fcn-mobilenet    --threshold=0.1  /dev/video0    --colormap  inferno
+```
+
+
+```
+choices=[
+"inferno", 
+"inferno-inverted", 
+"magma", 
+"magma-inverted", 
+"parula", 
+"parula-inverted", 
+"plasma", 
+"plasma-inverted", 
+"turbo", 
+"turbo-inverted", 
+"viridis", 
+"viridis-inverted"])
+```
+
+
+
+
+
+
+
+### 一張照片 找多個物體  框起整個物件
+
+```
+segnet.py  /dev/video0 webrtc://@:8554/output
+```
+
+```
+segnet    --network=fcn-resnet18-cityscapes-512x256      /dev/video0 webrtc://@:8554/output
+```
+
+### action detection
+- dji neo 判斷action後 ROS 送出去
+- resNet 
+
+
+## driver dev

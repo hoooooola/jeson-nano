@@ -1,8 +1,8 @@
 Native ROS 2 Development Tasks
-- [x] **[ 環境準備 ]** 安裝與配置 ROS 2 Humble (Moved to Ext4) <!-- id: native-1 -->
-- [/] **[ 飛控設置 ]** 設置 ArduPilot 本機開發環境 (Installing Prereqs...) <!-- id: native-2 -->
-- [ ] **[ 模擬設置 ]** 安裝 Gazebo Harmonic 與 ArduPilot Plugin <!-- id: native-3 -->
-- [ ] **[ 通訊驗證 ]** 驗證 ArduPilot 與 ROS 2 透過 DDS (Micro-ROS) 的通訊 <!-- id: native-4 -->
+- [x] **[ 環境準備 ]** 安裝與配置 ROS 2 Humble (Binary Installed) <!-- id: native-1 -->
+- [x] **[ 飛控設置 ]** 設置 ArduPilot 本機開發環境 (Copter-4.6.3 Built) <!-- id: native-2 -->
+- [ ] **[ 模擬設置 ]** 啟動 Gazebo 並驗證 SITL 連線 <!-- id: native-3 -->
+- [ ] **[ 通訊驗證 ]** 驗證 ROS 2 Topic 與 ros_gz_bridge <!-- id: native-4 -->的通訊 <!-- id: native-4 -->
 
 ## 1. 架構規劃 (System Architecture) - Phase 1: 穩定模擬 (Pragmatic Simulation)
 

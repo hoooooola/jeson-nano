@@ -66,10 +66,10 @@ while True:
     # print the pose results
     print("detected {:d} objects in image".format(len(poses)))
 
-    for pose in poses:
-        print(pose)
-        print(pose.Keypoints)
-        print('Links', pose.Links)
+    for pose in poses:    # 列印 pose 資訊
+        print(pose)        # 列印 pose 物件
+        print(pose.Keypoints) # 列印 pose 物件的 keypoint
+        print('Links', pose.Links) # 列印 pose 物件的 link 
 
     # render the image
     output.Render(img)
